@@ -57,15 +57,25 @@ Key evidence:
 ### P0-03 — Nextflow parser/compiler semantics
 
 - Nextflow now documents the strict parser as the authority used by the language server and `nextflow lint`; in Nextflow 26.04+ it is enabled by default.
-- Core parsing is still runtime-adjacent. `ScriptLoaderFactory` chooses parser v1/v2 from `NXF_SYNTAX_PARSER`, and `ScriptLoaderV2` compiles source into script classes and can later execute them with `runScript()`.
+- The current strict-parser stack is centered on the shared `nf-lang` module. The ADR describes parse/analyze support for Nextflow-specific AST nodes such as `ScriptNode`, `ProcessNode`, `WorkflowNode`, and `IncludeNode`, plus include resolution, name checking, and only minimal type checking for process/workflow calls.
+- There is a real parse/analyze-only path: `ScriptParser` parses sources, recursively resolves modules, captures comments, resolves includes/names, and performs type checking without immediately entering the runtime script-execution path.
+- AST/source ranges are real: `PositionConfigureUtils` stamps nodes with start/end line and column information, which is promising for a thin editor adapter.
+- Core parsing is still runtime-adjacent in other paths. `ScriptLoaderFactory` chooses parser v1/v2 from `NXF_SYNTAX_PARSER`, and `ScriptLoaderV2` compiles source into script classes and can later execute them with `runScript()`.
+- Local include resolution is explicit, but `plugin/...` includes are not resolved semantically to real plugin code in the strict parser; they receive placeholder targets instead, which is a current semantic gap for exact GUI signatures.
+- Remote module support in Nextflow 26.04 adds further side effects: runtime `ModuleResolver` can consult the registry, download tarballs, and install them into project storage.
+- Runtime workflow diagrams (`-with-dag`, optionally with `-preview`) are useful evidence that Nextflow itself can derive a graph, but they are execution/dataflow artifacts and are not equivalent to the editor preview or to a general-purpose edit API.
 - That split is useful for a thin JVM adapter, but it is not yet enough proof that all parser/compiler entry points are safe for untrusted-project analysis without additional session/plugin auditing.
-- Runtime workflow diagrams (`-with-dag`, optionally with `-preview`) are useful evidence that Nextflow itself can derive a graph, but they are not equivalent to the editor preview or to a general-purpose edit API.
 
 Key evidence:
 
+- [strict parser ADR](https://github.com/nextflow-io/nextflow/blob/master/adr/20250508-strict-syntax-parser.md)
+- [`ScriptParser.java`](https://github.com/nextflow-io/nextflow/blob/master/modules/nf-lang/src/main/java/nextflow/script/control/ScriptParser.java)
+- [`ResolveIncludeVisitor.java`](https://github.com/nextflow-io/nextflow/blob/master/modules/nf-lang/src/main/java/nextflow/script/control/ResolveIncludeVisitor.java)
+- [`PositionConfigureUtils.java`](https://github.com/nextflow-io/nextflow/blob/master/modules/nf-lang/src/main/java/nextflow/script/parser/PositionConfigureUtils.java)
 - [strict syntax docs](https://github.com/nextflow-io/nextflow/blob/master/docs/strict-syntax.mdx)
 - [`ScriptLoaderFactory.groovy`](https://github.com/nextflow-io/nextflow/blob/master/modules/nextflow/src/main/groovy/nextflow/script/ScriptLoaderFactory.groovy)
 - [`ScriptLoaderV2.groovy`](https://github.com/nextflow-io/nextflow/blob/master/modules/nextflow/src/main/groovy/nextflow/script/parser/v2/ScriptLoaderV2.groovy)
+- [`ModuleResolver.groovy`](https://github.com/nextflow-io/nextflow/blob/master/modules/nextflow/src/main/groovy/nextflow/module/ModuleResolver.groovy)
 - [reports docs (`-with-dag`)](https://github.com/nextflow-io/nextflow/blob/master/docs/reports.mdx#workflow-diagram)
 
 ### P0-04 — Parameter schemas and nf-core conventions
@@ -73,13 +83,27 @@ Key evidence:
 - `nf-schema` is explicitly a Nextflow plugin for validating pipeline parameters and sample sheets; it is not a general workflow-structure authority.
 - `nf-schema` requires Nextflow 25.10+ and Java 17+, and its README recommends version pinning because plugin code is fetched at runtime.
 - Current documented scope covers parameter help/summary, parameter validation, sample sheet validation, and typed sample-sheet conversion.
+- The current runtime validator is effectively JSON Schema 2020-12 only and layers Nextflow-specific evaluators on top for `file-path`-style formats, `exists`, nested-file `schema`, `uniqueEntries`, lenient typing, and deprecation checks.
+- These schema extensions are behavioral, not just descriptive metadata: they can resolve paths, load nested files, validate sample sheets recursively, and fail deprecated-field usage.
 - Nextflow typed-parameter support is runtime/session-backed (`ParamsDsl` resolves declared params from CLI/config/default values), so schema/UI work must stay separate from process-port or dataflow inference.
+- `nf-schema` itself warns that arbitrary valid JSON Schema may not be portable to UIs and launch tools outside the documented nf-schema conventions.
+- `nf-core/tools` is not fully aligned with `nf-schema`: it still straddles `draft-07`/`definitions` and `2020-12`/`$defs`, and the nf-schema migration guide says the plugin is currently not supported by nf-core tooling.
+- nf-core module `meta.yml` remains helpful summary metadata for modules, but lint treats it as a consistency document checked against `main.nf`; real runtime behavior still lives in source.
 - No evidence yet shows that nf-core module metadata is universally present or authoritative for arbitrary Nextflow projects; keep it optional and supplemental.
 
 Key evidence:
 
 - [nf-schema README](https://github.com/nextflow-io/nf-schema/blob/master/README.md)
+- [`JsonSchemaValidator.groovy`](https://github.com/nextflow-io/nf-schema/blob/master/src/main/groovy/nextflow/validation/validators/JsonSchemaValidator.groovy)
+- [`CustomEvaluatorFactory.groovy`](https://github.com/nextflow-io/nf-schema/blob/master/src/main/groovy/nextflow/validation/validators/evaluators/CustomEvaluatorFactory.groovy)
+- [nf-schema specification](https://github.com/nextflow-io/nf-schema/blob/master/docs/nextflow_schema/nextflow_schema_specification.md)
+- [nf-schema samplesheet specification](https://github.com/nextflow-io/nf-schema/blob/master/docs/nextflow_schema/sample_sheet_schema_specification.md)
+- [nf-schema migration guide](https://github.com/nextflow-io/nf-schema/blob/master/docs/migration_guide.md)
 - [`ParamsDsl.groovy`](https://github.com/nextflow-io/nextflow/blob/master/modules/nextflow/src/main/groovy/nextflow/script/ParamsDsl.groovy)
+- [`ParamsHelper.groovy`](https://github.com/nextflow-io/nextflow/blob/master/modules/nextflow/src/main/groovy/nextflow/script/ParamsHelper.groovy)
+- [`nf_core/pipelines/schema.py`](https://github.com/nf-core/tools/blob/master/nf_core/pipelines/schema.py)
+- [`nf_core/modules/lint/meta_yml.py`](https://github.com/nf-core/tools/blob/master/nf_core/modules/lint/meta_yml.py)
+- [`modules/meta-schema.json`](https://github.com/nf-core/modules/blob/master/modules/meta-schema.json)
 - [typed-parameter and VS Code docs](https://github.com/nextflow-io/nextflow/blob/master/docs/vscode.mdx)
 
 ### P0-05 — Desktop/editor infrastructure
@@ -117,15 +141,19 @@ Key evidence:
 
 1. Keep the Nextflow language server as the first semantic authority for diagnostics, navigation, rename, and lightweight structure.
 2. Treat `previewDag`/`previewWorkspace` as useful but editor-specific protocol, not as a stable standard API for all structural extraction/editing needs.
-3. If phase 2 needs more than those custom commands provide, add only a thin JVM adapter over official Nextflow parser/compiler entry points and keep parse-time and run-time boundaries explicit.
-4. Keep parameter forms schema-aware but separate from process/input/output inference.
-5. Prefer a Rust-supervised stdio language-server bridge exposed to the frontend through Tauri commands/channels rather than a localhost websocket service.
-6. Do not lock the frontend to Monaco until a phase-1 spike chooses between prerelease `monaco-languageclient` alignment and a more conservative editor path.
+3. If phase 2 needs more than those custom commands provide, add only a thin JVM adapter over official strict-parser entry points and keep parse-time and run-time boundaries explicit.
+4. Treat plugin includes as unresolved semantic edges unless a higher-level official service provides real signatures; current core parsing only supplies placeholders.
+5. Keep parameter forms schema-aware but separate from process/input/output inference, and prefer native typed params when available.
+6. Treat nf-core module metadata as optional summary metadata, not as a compiler-grade or execution-grade source of truth.
+7. Prefer a Rust-supervised stdio language-server bridge exposed to the frontend through Tauri commands/channels rather than a localhost websocket service.
+8. Do not lock the frontend to Monaco until a phase-1 spike chooses between prerelease `monaco-languageclient` alignment and a more conservative editor path.
 
 ## Remaining blockers before any P0 task is checked complete
 
 - Review upstream tests for invalid/incomplete source, cancellation, and stale-result handling in the language server.
 - Verify source-range and module-resolution coverage for all editable constructs the GUI needs.
 - Audit plugin and parser initialization side effects more deeply before treating a custom JVM adapter as safe for untrusted projects.
+- Account for unresolved plugin-include semantics and minimal strict-parser type checking for process/workflow calls when defining the supported visual-editing subset.
+- Decide how to handle JSON Schema dialect mismatches between nf-schema and nf-core tooling in any parameter-form UX.
 - Finish advisory/provenance/transitive reviews for the direct dependency set, not just headline licenses and release notes.
 - Convert these findings into the full feature-to-semantics/edit-path matrix required for P0-06 and P0-08.

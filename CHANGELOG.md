@@ -43,7 +43,9 @@ contents in reports.
 - Updated [docs/plan/phase-0-upstream-audit.md](docs/plan/phase-0-upstream-audit.md) to link the new findings file and to correct the official VS Code extension source from the stale `nextflow-io/vscode-nextflow` URL to `nextflow-io/vscode-language-nextflow`.
 - Verified from upstream code/docs that the Nextflow language server is a stdio LSP server with incremental document sync and editor-specific commands for DAG/workspace previews and typed-script conversion.
 - Verified that the current extension downloads or reuses version-matched language-server binaries from `~/.nextflow/lsp`, requires Java 17+ unless a native binary is already present, and augments some project-view data outside the language server (`.nf.test` regex parsing).
-- Verified that strict-parser behavior in Nextflow 26.04+ is a key semantic baseline, that core loaders separate parse and run steps but stay runtime-adjacent, and that runtime `-with-dag` output is not equivalent to the editor's preview path.
+- Verified that strict-parser behavior in Nextflow 26.04+ is a key semantic baseline, that `nf-lang` provides a real parse/analyze path with AST positions, and that core loaders still sit close to runtime execution and plugin/module side effects.
+- Verified that `plugin/...` includes are currently unresolved placeholders in core strict parsing, that remote-module resolution can hit registries/download/install paths, and that runtime `-with-dag` output is not equivalent to the editor's preview path.
+- Verified that `nf-schema` is effectively JSON Schema 2020-12 only today with custom Nextflow evaluators, while nf-core tooling still spans older and newer schema dialects and should not be treated as a single authoritative metadata source.
 - Recorded an immediate frontend risk: the TypeFox compatibility table aligns `monaco-editor` `0.56.0` with unreleased `monaco-languageclient` `11.0.0-next.3`, while the latest stable listed line is older (`10.7.0` with `monaco-editor` `0.55.1`).
 
 ### Validation
@@ -55,7 +57,7 @@ contents in reports.
 ### Limitations and next steps
 
 - This is still partial phase 0 evidence, not a completed audit or approved dependency matrix.
-- Remaining work should focus on **P0-01/P0-03** test and source-range coverage, **P0-05/P0-07** advisory/provenance/transitive review, and then the full **P0-06/P0-08** capability matrix.
+- Remaining work should focus on **P0-01/P0-03** test and source-range coverage, unresolved plugin semantics, **P0-04** schema-dialect handling, **P0-05/P0-07** advisory/provenance/transitive review, and then the full **P0-06/P0-08** capability matrix.
 - No phase 0 task is checked complete yet, and **P0-EXIT** remains blocked on missing matrix and validation evidence.
 
 ### Tasks/status
