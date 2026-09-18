@@ -208,4 +208,4 @@ Tasks without a row and with an unchecked box are not started.
 | Task IDs | Status | Evidence and validation | Blockers / next action |
 |---|---|---|---|
 | DOC-01 | Complete | [Main plan](PLAN.md), linked phase documents, and commit `a25b059`; original research limitation retained. | Begin P0-01; upstream claims remain unverified. |
-| DOC-02 | Complete | This checklist, [initial changelog](CHANGELOG.md#2026-09-18--planning-foundation), and reporting references in the main plan and all phases; documentation-only change. | Use both reporting files for subsequent work. |
+| DOC-02 | Complete | This checklist, [initial changelog and validation outcomes](CHANGELOG.md#2026-09-18--planning-foundation), and reporting references in all phases; secret/whitespace and duplicate-ID checks passed, links manually reviewed. | Automated review unavailable (model configuration); CodeQL skipped documentation-only changes. Use both reporting files for subsequent work. |

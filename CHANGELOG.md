@@ -51,9 +51,12 @@ contents in reports.
 - Initial plan commit: secret and whitespace checks passed; navigation and
   coverage were manually reviewed. Automated code review was unavailable due to
   a model configuration error; CodeQL skipped documentation-only changes.
-- Tracker/reporting changes: validation outcomes will be recorded below after
-  checks complete. No application tests apply to these Markdown-only changes;
-  the repository has no application or documentation test suite.
+- Tracker/reporting changes: secret and whitespace checks passed; task IDs were
+  checked for duplicates (none found), local links/anchors and phase coverage
+  were manually reviewed, and only completed planning tasks are checked.
+- Automated review was attempted but unavailable due to a model configuration
+  error. CodeQL skipped these documentation-only changes. No application tests
+  apply; the repository has no application or documentation test suite.
 
 ### Limitations and next steps
 
