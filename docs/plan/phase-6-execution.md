@@ -2,6 +2,10 @@
 
 [Main plan](../../PLAN.md) · [Previous: compatibility and packaging](phase-5-compatibility-packaging.md) · [Next: expansion and upstream contributions](phase-7-expansion.md)
 
+**Required reporting:** update [task status and evidence](../../PLAN_TRACKING.md#phase-6--optional-execution)
+and [CHANGELOG.md](../../CHANGELOG.md) for work on this phase, including partial
+progress and blockers; follow the [reporting workflow](../../PLAN.md#required-progress-reporting).
+
 ## Objective and work
 
 Add optional execution features:

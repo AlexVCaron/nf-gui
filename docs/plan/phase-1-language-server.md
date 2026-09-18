@@ -2,6 +2,10 @@
 
 [Main plan](../../PLAN.md) · [Previous: upstream audit](phase-0-upstream-audit.md) · [Next: structural extraction](phase-2-structural-extraction.md)
 
+**Required reporting:** update [task status and evidence](../../PLAN_TRACKING.md#phase-1--language-server-integration)
+and [CHANGELOG.md](../../CHANGELOG.md) for work on this phase, including partial
+progress and blockers; follow the [reporting workflow](../../PLAN.md#required-progress-reporting).
+
 ## Objective and work
 
 Prove the language-server integration:

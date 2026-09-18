@@ -2,6 +2,10 @@
 
 [Main plan](../../PLAN.md) · [Previous: language-server integration](phase-1-language-server.md) · [Next: visual editing](phase-3-visual-editing.md)
 
+**Required reporting:** update [task status and evidence](../../PLAN_TRACKING.md#phase-2--structural-extraction)
+and [CHANGELOG.md](../../CHANGELOG.md) for work on this phase, including partial
+progress and blockers; follow the [reporting workflow](../../PLAN.md#required-progress-reporting).
+
 ## Objective and work
 
 Prove structural extraction:

@@ -2,6 +2,10 @@
 
 [Main plan](../../PLAN.md) · [Next: language-server integration](phase-1-language-server.md)
 
+**Required reporting:** update [task status and evidence](../../PLAN_TRACKING.md#phase-0--upstream-audit)
+and [CHANGELOG.md](../../CHANGELOG.md) for work on this phase, including partial
+progress and blockers; follow the [reporting workflow](../../PLAN.md#required-progress-reporting).
+
 ## Objective and exit criterion
 
 Complete the upstream audit before treating architectural assumptions as proven:

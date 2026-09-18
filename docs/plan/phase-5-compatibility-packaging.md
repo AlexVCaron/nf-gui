@@ -2,6 +2,10 @@
 
 [Main plan](../../PLAN.md) · [Previous: first usable application](phase-4-usable-application.md) · [Next: optional execution](phase-6-execution.md)
 
+**Required reporting:** update [task status and evidence](../../PLAN_TRACKING.md#phase-5--compatibility-security-validation-and-packaging)
+and [CHANGELOG.md](../../CHANGELOG.md) for work on this phase, including partial
+progress and blockers; follow the [reporting workflow](../../PLAN.md#required-progress-reporting).
+
 ## Objective and work
 
 Add compatibility and packaging:

@@ -18,6 +18,29 @@ Links identify primary sources to audit; version-specific capabilities are
 deliberately not presented as verified facts. Splitting the plan into files
 does not change that evidence status.
 
+## Required progress reporting
+
+**Contributors and agents must update both [PLAN_TRACKING.md](PLAN_TRACKING.md)
+and [CHANGELOG.md](CHANGELOG.md) whenever they work on plan tasks.** Include those
+updates in the same change as the work, including partial progress, blockers,
+and reopened tasks—not only at phase completion.
+
+1. Before starting, read the relevant phase and select its stable task IDs in
+   the tracker. Record in-progress status and the intended next action.
+2. Before handing off work, update checkboxes and the tracker's work-status table
+   with concrete results, evidence links, validation outcomes, unresolved
+   blockers, and next actions. Check tasks only when their requirements and
+   relevant validation are satisfied; never equate documentation with execution.
+3. Add a dated changelog entry referencing those IDs, describing what changed
+   and why, the checks actually run, any checks unavailable or skipped, remaining
+   risks, and the next task IDs. Follow its entry requirements.
+4. If the approach or scope changes, update the affected plan sections as well
+   and explain the decision in the changelog. Preserve IDs and history.
+
+The tracker is the single task-status checklist; the changelog is the historical
+work record. Phase documents define requirements, not duplicate status lists.
+Security and validation requirements apply during every phase.
+
 ## Central recommendation
 
 > Keep Nextflow source files authoritative. Use the Nextflow language server

@@ -2,6 +2,10 @@
 
 [Main plan](../../PLAN.md) · [Previous: optional execution](phase-6-execution.md)
 
+**Required reporting:** update [task status and evidence](../../PLAN_TRACKING.md#phase-7--expansion-and-upstream-contributions)
+and [CHANGELOG.md](../../CHANGELOG.md) for work on this phase, including partial
+progress and blockers; follow the [reporting workflow](../../PLAN.md#required-progress-reporting).
+
 ## Objective
 
 Broaden editing support and upstream shared features.

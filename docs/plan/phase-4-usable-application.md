@@ -2,6 +2,10 @@
 
 [Main plan](../../PLAN.md) · [Previous: visual editing](phase-3-visual-editing.md) · [Next: compatibility and packaging](phase-5-compatibility-packaging.md)
 
+**Required reporting:** update [task status and evidence](../../PLAN_TRACKING.md#phase-4--first-usable-application)
+and [CHANGELOG.md](../../CHANGELOG.md) for work on this phase, including partial
+progress and blockers; follow the [reporting workflow](../../PLAN.md#required-progress-reporting).
+
 ## Objective and work
 
 Build the first usable application:
