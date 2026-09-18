@@ -5,6 +5,9 @@
 This file records the first verified upstream findings for phase 0. It is
 evidence for work in progress, not proof that phase 0 is complete.
 
+The selected compatibility line and the versioned P0-06/P0-08 matrix now live
+in [phase-0-capability-matrix.md](phase-0-capability-matrix.md).
+
 ## Audit baseline captured on 2026-09-18
 
 | Area | Verified baseline | Evidence |
@@ -174,4 +177,3 @@ Additional notes:
 - Account for unresolved plugin-include semantics and minimal strict-parser type checking for process/workflow calls when defining the supported visual-editing subset.
 - Decide how to handle JSON Schema dialect mismatches between nf-schema and nf-core tooling in any parameter-form UX.
 - Finish transitive/provenance review for the direct dependency set and decide whether the Monaco path should downgrade to a stable compatible matrix or accept prerelease bridge risk.
-- Convert these findings into the full feature-to-semantics/edit-path matrix required for P0-06 and P0-08.

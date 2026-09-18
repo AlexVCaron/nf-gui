@@ -27,9 +27,12 @@ the live web/source audit.
 ## Current audit snapshot
 
 Initial verified findings for this phase now live in
-[phase-0-audit-findings.md](phase-0-audit-findings.md). They record the first
-round of upstream code/doc evidence, candidate version pins, and current
-blockers without claiming phase completion.
+[phase-0-audit-findings.md](phase-0-audit-findings.md), and the current
+baseline selections plus the versioned capability matrix live in
+[phase-0-capability-matrix.md](phase-0-capability-matrix.md). Together they
+record the first round of upstream code/doc evidence, the selected compatibility
+line for P0-06/P0-08, and the remaining blockers without claiming phase
+completion.
 
 ## What can the language server actually provide?
 

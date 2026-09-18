@@ -24,6 +24,33 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-09-18 14:16 UTC — Phase 0 capability matrix and baseline selection
+
+### Tasks/status
+
+- **P0-06 complete:** added the versioned capability matrix covering standard requests, custom commands, payload shapes, unsaved buffers, cancellation, stale results, cross-file resolution, supported syntax, and semantic/editing gaps.
+- **P0-08 complete:** selected the managed toolchain baseline and documented how each initial-release feature obtains semantics and performs edits.
+- **P0-01/P0-03/P0-05/P0-07 remain in progress:** the phase still needs stronger request/test coverage, editable-subconstruct proof, final provenance follow-up, and the planned Monaco integration spike before phase exit can close.
+
+### Work and decisions
+
+- Added [docs/plan/phase-0-capability-matrix.md](docs/plan/phase-0-capability-matrix.md) to record the selected baseline, rejected alternatives, the server capability matrix, and the feature-to-semantics/edit-path matrix for the initial release boundary.
+- Clarified that the managed Nextflow floor (`26.04.3+`) applies to app-managed tooling and audit baselines, not as a forced upgrade requirement on every repository the user opens.
+- Chose a conservative stable editor compatibility line (`monaco-editor` `0.55.1`, `monaco-languageclient` `10.7.0`, `@codingame/monaco-vscode-api` `25.1.2`) instead of the currently unreleased Monaco bridge line, while keeping the Monaco worker/CSP proof explicitly deferred to phase 1.
+- Recorded that Java 17+ remains the current phase-0 prerequisite and that bundled or managed Java distribution is still a later packaging decision rather than a closed upstream-audit fact.
+- Added explicit matrix rows for project language-line handling and JSON Schema dialect mismatch so future work distinguishes upstream semantic gaps from implementation work that is merely not built yet.
+
+### Validation
+
+- Manually reviewed the new matrix document, links, and tracker/changelog updates for consistency with the phase 0 findings.
+- No repository test, build, or lint command exists yet; this repository still contains planning documents only.
+- Secret scanning and parallel validation must be re-run after this matrix update before the current change set is finalized.
+
+### Limitations and next steps
+
+- **P0-EXIT** remains blocked on stronger P0-01 invalid/incomplete-source and cancellation evidence, stronger P0-03 editable-range proof, and the deferred phase-1 Monaco integration spike.
+- Continue with the remaining P0-01/P0-03/P0-05/P0-07 blockers and keep the selected baseline pinned in any future manifests or spikes unless new upstream evidence forces a change.
+
 ## 2026-09-18 13:33 UTC — Phase 0 initial upstream audit
 
 ### Tasks/status
