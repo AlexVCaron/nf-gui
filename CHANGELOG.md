@@ -24,8 +24,6 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
-## 2026-09-18 — Planning foundation
-
 ## 2026-09-18 13:33 UTC — Phase 0 initial upstream audit
 
 ### Tasks/status
@@ -60,6 +58,8 @@ contents in reports.
 - This is still partial phase 0 evidence, not a completed audit or approved dependency matrix.
 - Remaining work should focus on **P0-01/P0-03** test and source-range coverage, unresolved plugin semantics, **P0-04** schema-dialect handling, finishing **P0-05/P0-07** transitive/provenance decisions around the Monaco/Tauri path, and then the full **P0-06/P0-08** capability matrix.
 - No phase 0 task is checked complete yet, and **P0-EXIT** remains blocked on missing matrix and validation evidence.
+
+## 2026-09-18 — Planning foundation
 
 ### Tasks/status
 
