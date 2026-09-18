@@ -130,12 +130,29 @@ Key evidence:
 |---|---|---|
 | Nextflow language server | Apache-2.0 | No blocker found in this pass. |
 | Nextflow core | Apache-2.0 | No blocker found in this pass. |
-| nf-schema | Apache-2.0 | No blocker found in this pass. |
+| nf-schema | Apache-2.0 | Treat as an opt-in pinned runtime plugin, not a default bundled dependency. |
 | VS Code extension | MIT | No blocker found in this pass. |
-| Tauri 2.9.2 | MIT or Apache-2.0 | Release audit includes RustSec warnings in the Linux GTK/WebKit dependency stack, and public GitHub advisories exist for past remote-IPC/origin-confusion issues; treat Linux packaging and remote-capability scoping as tracked risks, not solved dependency decisions. |
+| Tauri 2.9.2 / `@tauri-apps/api` 2.9.0 | MIT or Apache-2.0 | Accept with caveats: Linux GTK/WebKit prerequisites remain a packaging/runtime risk; pin exact versions and keep remote-capability scope tight. |
 | monaco-editor | MIT | No blocker found in this pass. |
-| monaco-languageclient | MIT | Compatibility, not licensing, is the immediate blocker. |
+| monaco-languageclient | MIT | Compatibility, not licensing, is the immediate blocker. Stable `10.7.0` aligns with `monaco-editor` `0.55.1`, not `0.56.0`. |
 | @xyflow/react | MIT | No blocker found in this pass. |
+
+## P0-07 candidate dependency and supply-chain snapshot
+
+| Dependency | Candidate version | Role | Provenance / advisory note | Current decision |
+|---|---|---|---|---|
+| Tauri core | `2.9.2` | Runtime platform | Official upstream crate/release; Linux paths still rely on GTK/WebKit stacks and prior Tauri advisories make capability scoping a standing security concern. | Accept with caveats. |
+| `@tauri-apps/api` | `2.9.0` | Runtime frontend bridge | Official npm package with provenance attestation; note that package and framework patch versions do not necessarily match one-for-one. | Accept and pin exactly. |
+| `monaco-editor` | `0.56.0` | Runtime editor | Official MIT package, but this exact version currently aligns only with unreleased `monaco-languageclient` `11.0.0-next.3`. | Conditional only; blocked unless prerelease bridge risk is accepted. |
+| `monaco-languageclient` | `10.7.0` stable | Runtime editor bridge | Official compatibility table pairs the stable line with `monaco-editor` `0.55.1`. No package-specific advisory was surfaced in this pass. | Accept only with a compatible Monaco downgrade, or replace with a different editor path. |
+| `@xyflow/react` | `12.11.6` | Runtime canvas | Official npm package with provenance attestation; no blocker found in this pass. | Accept. |
+| Nextflow language server | `v26.04.4` | External runtime artifact | Official release JAR over stdio; treat as a managed sidecar/resource, not a normal frontend dependency. | Accept and pin. |
+| `nf-schema` | `2.8.0` | Optional runtime plugin | Official plugin docs recommend version pinning and runtime retrieval; keep optional rather than bundled by default. | Accept only as opt-in and pinned. |
+
+Additional notes:
+
+- The advisory pass did not surface a package-specific blocker for Monaco, monaco-languageclient, React Flow, or nf-schema, but that is only a “no readily verifiable advisory found” result, not a formal clean bill of health.
+- An official Nextflow security advisory affected core versions up to `26.04.2`; keep any selected Nextflow engine baseline at `26.04.3+`.
 
 ## Current architecture implications
 
@@ -146,7 +163,8 @@ Key evidence:
 5. Keep parameter forms schema-aware but separate from process/input/output inference, and prefer native typed params when available.
 6. Treat nf-core module metadata as optional summary metadata, not as a compiler-grade or execution-grade source of truth.
 7. Prefer a Rust-supervised stdio language-server bridge exposed to the frontend through Tauri commands/channels rather than a localhost websocket service.
-8. Do not lock the frontend to Monaco until a phase-1 spike chooses between prerelease `monaco-languageclient` alignment and a more conservative editor path.
+8. Treat the Nextflow language server and nf-schema as managed external runtime artifacts, not ordinary frontend package dependencies.
+9. Do not lock the frontend to Monaco until a phase-1 spike chooses between prerelease `monaco-languageclient` alignment and a more conservative editor path.
 
 ## Remaining blockers before any P0 task is checked complete
 
@@ -155,5 +173,5 @@ Key evidence:
 - Audit plugin and parser initialization side effects more deeply before treating a custom JVM adapter as safe for untrusted projects.
 - Account for unresolved plugin-include semantics and minimal strict-parser type checking for process/workflow calls when defining the supported visual-editing subset.
 - Decide how to handle JSON Schema dialect mismatches between nf-schema and nf-core tooling in any parameter-form UX.
-- Finish advisory/provenance/transitive reviews for the direct dependency set, not just headline licenses and release notes.
+- Finish transitive/provenance review for the direct dependency set and decide whether the Monaco path should downgrade to a stable compatible matrix or accept prerelease bridge risk.
 - Convert these findings into the full feature-to-semantics/edit-path matrix required for P0-06 and P0-08.
