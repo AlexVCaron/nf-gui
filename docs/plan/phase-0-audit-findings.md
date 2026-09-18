@@ -24,13 +24,16 @@ evidence for work in progress, not proof that phase 0 is complete.
 - The server is a standard stdio LSP server (`Launcher.createLauncher(..., System.in, System.out)`), not a websocket service, which fits a Tauri-supervised child process model.
 - Advertised standard capabilities are incremental text sync, workspace folders, call hierarchy, code lens, completion, definition, formatting, document links, document symbols, hover, references, semantic tokens, rename, and workspace symbols.
 - The server also exposes custom execute-command entries: `nextflow.server.previewDag`, `nextflow.server.previewWorkspace`, `nextflow.server.convertPipelineToTyped`, and `nextflow.server.convertScriptToTyped`.
-- Unsaved-buffer support is plausible through `didOpen`/`didChange` incremental updates, but this phase still needs explicit test evidence for stale-result and partial-parse behavior before the task can be checked complete.
-- Graph/structure is not exposed as a standard LSP method; current graph/project features ride editor-specific commands.
+- No registered code-action or signature-help provider was found in the current capability set.
+- Unsaved-buffer support is real through the in-memory file cache and incremental `didOpen`/`didChange` updates, but request behavior is uneven: completion/formatting/custom commands recompile eagerly while definition/hover/references/rename/call hierarchy can lag the debounce window and therefore return stale analysis.
+- Graph/structure is not exposed as a standard LSP method; current graph/project features ride custom commands, and `previewWorkspace` returns only a narrow schema (`name`, `type`, `path`, `line`, optional `children`).
 
 Key evidence:
 
 - [`NextflowLanguageServer.java`](https://github.com/nextflow-io/language-server/blob/master/src/main/java/nextflow/lsp/NextflowLanguageServer.java)
 - [`WorkspacePreviewProvider.java`](https://github.com/nextflow-io/language-server/blob/master/src/main/java/nextflow/lsp/services/script/WorkspacePreviewProvider.java)
+- [`LanguageService.java`](https://github.com/nextflow-io/language-server/blob/master/src/main/java/nextflow/lsp/services/LanguageService.java)
+- [`FileCache.java`](https://github.com/nextflow-io/language-server/blob/master/src/main/java/nextflow/lsp/file/FileCache.java)
 - [language-server README](https://github.com/nextflow-io/language-server/blob/master/README.md)
 
 ### P0-02 — Official editor integration
@@ -41,12 +44,14 @@ Key evidence:
 - The extension restarts the server when `nextflow.java.home` or `nextflow.languageVersion` changes and provides explicit restart/stop commands for recovery.
 - DAG preview is not a generic editor graph layer: the extension calls the server command `nextflow.server.previewDag`; the project webview calls `nextflow.server.previewWorkspace`.
 - The project webview supplements official data with local regex parsing of `.nf.test` files, so not all structure shown in the extension is coming from the language server.
+- The current extension appears to refresh its project view from save/file events rather than from every unsaved edit, so server support for unsaved buffers does not automatically mean every editor-side overview stays live.
 
 Key evidence:
 
 - [`src/languageServer/index.ts`](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/src/languageServer/index.ts)
 - [`src/languageServer/utils/fetchLanguageServer.ts`](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/src/languageServer/utils/fetchLanguageServer.ts)
 - [`src/webview/WebviewProvider/lib/workspace/queryWorkspace.ts`](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/src/webview/WebviewProvider/lib/workspace/queryWorkspace.ts)
+- [`src/webview/index.ts`](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/src/webview/index.ts)
 - [extension README](https://github.com/nextflow-io/vscode-language-nextflow/blob/main/README.md)
 
 ### P0-03 — Nextflow parser/compiler semantics
@@ -81,7 +86,10 @@ Key evidence:
 
 - Tauri 2 remains a viable baseline because it uses system webviews and explicitly does not require a localhost HTTP server for the application shell.
 - The Tauri 2.9.2 crate manifest shows platform-bound dependencies such as WebView2 on Windows and WebKitGTK on Linux, matching the packaging and compatibility concerns already called out in the plan.
+- Tauri capability boundaries are explicit but compositional: if one window/webview belongs to multiple capabilities, permissions merge, so high-privilege language-server/process commands should stay isolated.
+- Tauri channels are a better fit than generic events for LSP traffic because they are the documented high-throughput streaming primitive; a localhost websocket bridge is unnecessary.
 - Monaco is still viable, but the TypeFox compatibility table currently aligns `monaco-editor` `0.56.0` with the unreleased `monaco-languageclient` `11.0.0-next.3`; the latest stable line (`10.7.0`) aligns with `monaco-editor` `0.55.1`.
+- Monaco packaging still requires explicit worker setup, and Tauri/WebView CSP constraints mean the safer baseline is bundled assets plus module-worker packaging rather than a remote or `file://` path.
 - That version skew means a Monaco path currently requires either a prerelease bridge or a deliberate downgrade/pin, so phase 1 should begin with a small integration spike rather than treating Monaco as already settled.
 
 Key evidence:
@@ -90,6 +98,7 @@ Key evidence:
 - [`crates/tauri/Cargo.toml` at `tauri-v2.9.2`](https://github.com/tauri-apps/tauri/blob/tauri-v2.9.2/crates/tauri/Cargo.toml)
 - [monaco-languageclient README](https://github.com/TypeFox/monaco-languageclient/blob/main/README.md)
 - [compatibility table](https://github.com/TypeFox/monaco-languageclient/blob/main/docs/versions-and-history.md#monaco-editor--codingamemonaco-vscode-api-compatibility-table)
+- [Monaco ESM integration guide](https://github.com/microsoft/monaco-editor/blob/main/docs/integrate-esm.md)
 
 ## Initial licensing and advisory notes
 
@@ -99,7 +108,7 @@ Key evidence:
 | Nextflow core | Apache-2.0 | No blocker found in this pass. |
 | nf-schema | Apache-2.0 | No blocker found in this pass. |
 | VS Code extension | MIT | No blocker found in this pass. |
-| Tauri 2.9.2 | MIT or Apache-2.0 | Release audit includes RustSec warnings in the Linux GTK/WebKit dependency stack; treat Linux packaging as a tracked risk, not a solved dependency decision. |
+| Tauri 2.9.2 | MIT or Apache-2.0 | Release audit includes RustSec warnings in the Linux GTK/WebKit dependency stack, and public GitHub advisories exist for past remote-IPC/origin-confusion issues; treat Linux packaging and remote-capability scoping as tracked risks, not solved dependency decisions. |
 | monaco-editor | MIT | No blocker found in this pass. |
 | monaco-languageclient | MIT | Compatibility, not licensing, is the immediate blocker. |
 | @xyflow/react | MIT | No blocker found in this pass. |
@@ -110,7 +119,8 @@ Key evidence:
 2. Treat `previewDag`/`previewWorkspace` as useful but editor-specific protocol, not as a stable standard API for all structural extraction/editing needs.
 3. If phase 2 needs more than those custom commands provide, add only a thin JVM adapter over official Nextflow parser/compiler entry points and keep parse-time and run-time boundaries explicit.
 4. Keep parameter forms schema-aware but separate from process/input/output inference.
-5. Do not lock the frontend to Monaco until a phase-1 spike chooses between prerelease `monaco-languageclient` alignment and a more conservative editor path.
+5. Prefer a Rust-supervised stdio language-server bridge exposed to the frontend through Tauri commands/channels rather than a localhost websocket service.
+6. Do not lock the frontend to Monaco until a phase-1 spike chooses between prerelease `monaco-languageclient` alignment and a more conservative editor path.
 
 ## Remaining blockers before any P0 task is checked complete
 
