@@ -24,6 +24,13 @@ an unresolved semantic dependency.
 verified findings or version-pinned selections. The initial plan did not perform
 the live web/source audit.
 
+## Current audit snapshot
+
+Initial verified findings for this phase now live in
+[phase-0-audit-findings.md](phase-0-audit-findings.md). They record the first
+round of upstream code/doc evidence, candidate version pins, and current
+blockers without claiming phase completion.
+
 ## What can the language server actually provide?
 
 The Language Server Protocol supplies a useful foundation, but it does **not**
@@ -99,7 +106,11 @@ Questions to settle:
 
 ### B. Official Nextflow editor integration
 
-Primary source: https://github.com/nextflow-io/vscode-nextflow
+Primary source: https://github.com/nextflow-io/vscode-language-nextflow
+
+_Note:_ the plan previously pointed at `nextflow-io/vscode-nextflow`, which now
+returns 404; current Nextflow documentation and the marketplace extension point
+to `nextflow-io/vscode-language-nextflow`.
 
 Inspect:
 
