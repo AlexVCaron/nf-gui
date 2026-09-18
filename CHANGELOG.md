@@ -44,7 +44,8 @@ contents in reports.
 
 - Manually reviewed the new matrix document, links, and tracker/changelog updates for consistency with the phase 0 findings.
 - No repository test, build, or lint command exists yet; this repository still contains planning documents only.
-- Secret scanning and parallel validation must be re-run after this matrix update before the current change set is finalized.
+- Secret scanning passed on the changed planning files.
+- Parallel validation ran after the matrix update. CodeQL correctly skipped the trivial docs-only change. The automated review step returned no review comments, but also emitted a model-availability warning, so automated review availability remains partially limited in this environment.
 
 ### Limitations and next steps
 
