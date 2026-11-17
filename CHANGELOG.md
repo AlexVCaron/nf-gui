@@ -24,6 +24,80 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-17 — Scaffolded the reusable Tauri prototype
+
+### Tasks/status
+
+- **P0-07 advanced but remains blocked:** real npm/Cargo dependency graphs and an
+  artifact-verification workflow now exist; unresolved advisories, license and
+  provenance evidence, and one unavailable artifact prevent completion.
+- **P0-EXIT remains blocked:** the P0-07 findings are not dispositioned and the
+  phase exit evidence is not complete.
+- The prototype is a UI/build checkpoint, not completion of Phase 1 or a usable
+  workflow editor.
+
+### Work and decisions
+
+- Generated `poc/` with the official Tauri React/TypeScript scaffold, then
+  replaced its greeting screen with a local-only Monaco text buffer and a static
+  React Flow sample. It has no workspace access, server, Tauri commands,
+  permissions, plugin loading, or pipeline execution.
+- Pinned frontend dependencies and added `package-lock.json`; pinned Tauri
+  `2.9.2` and `tauri-build` `2.7.5` with `src-tauri/Cargo.lock`. The Tauri
+  Windows/Android release gate remains unchanged.
+- Added the reusable local SHA-256 manifest/verifier and exact download/update
+  instructions for the language-server JAR and nf-schema blob. Artifacts are
+  neither automatically downloaded nor committed.
+- Trial resolution of the earlier Monaco LSP bridge candidates reported npm
+  findings, so the prototype excludes `monaco-languageclient`, Codingame API,
+  and `@tauri-apps/api`; the bridge remains a Phase 1 decision.
+- Updated the [prototype guide](poc/README.md), [root README](README.md),
+  [P0-07 findings](docs/plan/phase-0-audit-findings.md), capability matrix, and
+  tracker with the evidence and current blockers.
+
+### Validation
+
+- `npm ci`, `npm test` (all five artifact-verifier cases), and `npm run build`
+  passed. Vite emitted a large-chunk warning for
+  Monaco but completed successfully.
+- Browser smoke check rendered the editor and graph; the React Flow external
+  attribution click stayed on the local page, and the missing-favicon 404 was
+  corrected.
+- The artifact verifier accepted the downloaded language-server JAR at
+  `15326450` bytes with the expected SHA-256 and rejected a deliberately
+  incorrect digest. The nf-schema registry host could not be resolved, so its
+  blob remains unverified.
+- `npm audit --omit=dev --audit-level=moderate` reported zero vulnerabilities.
+  Full `npm audit` reports five high-severity findings through Vite's
+  `picomatch` `4.0.7` dependency; no patched release was available. The tool's
+  suggested Vite `6.2.7` downgrade conflicts with the separately recorded
+  `launch-editor` affected range, so no automatic downgrade was applied.
+- `cargo generate-lockfile`, `cargo metadata --locked`, `npm sbom`, dependency
+  tree commands, and `cargo fmt --check` completed. Metadata covers 494 Cargo
+  packages (the prototype crate has no declared license) and 54 npm components.
+- `cargo audit --deny warnings` denied five RustSec warnings (three
+  unmaintained and two unsoundness advisories); RustSec did not report the
+  separate Tauri GHSA. The GitHub advisory tool also missed the known Tauri
+  finding and Vite's transitive npm finding; explicit advisory records remain
+  controlling.
+- `npm run tauri build` reached the Rust build but could not complete because
+  `glib-2.0` development metadata is absent; the generator also detected
+  missing `webkit2gtk` and `rsvg2`   prerequisites. Internal Markdown file links and `git diff --check` passed.
+  Secret scanning found no secrets; CodeQL will run after the code commit.
+
+### Limitations and next steps
+
+- **P0-07:** resolve/disposition the Vite/picomatch findings and RustSec
+  warnings, declare the prototype's license, independently verify nf-schema
+  provenance and digest, re-review deferred LSP bridge versions, and reconcile
+  advisory scanner gaps. Do not mark the task complete until the evidence meets
+  its requirements.
+- **P0-EXIT:** remains open until P0-07 is complete and the matrix is reviewed
+  against the initial feature set.
+- **Phase 1:** prove `@tauri-apps/api`/Tauri pairing, packaged Monaco worker/CSP,
+  and IPC-to-stdio server transport. Upgrade Tauri and re-audit before
+  Windows/Android support or shipment.
+
 ## 2026-11-17 — Tauri PoC baseline retained
 
 ### Tasks/status

@@ -1,0 +1,25 @@
+{
+  "formatVersion": 1,
+  "artifacts": [
+    {
+      "id": "nextflow-language-server",
+      "version": "26.04.4",
+      "file": "language-server-all.jar",
+      "source": "https://github.com/nextflow-io/language-server/releases/download/v26.04.4/language-server-all.jar",
+      "sha256": "e1c5da90c7f0565ba9e64ac3c5b58f1215e315d6bfe4414d62ff2d02749e8887",
+      "digestSource": "https://api.github.com/repos/nextflow-io/language-server/releases/tags/v26.04.4",
+      "license": "Apache-2.0",
+      "role": "Optional external Java runtime; not bundled or launched by this prototype."
+    },
+    {
+      "id": "nf-schema-plugin",
+      "version": "2.8.0",
+      "file": "nf-schema-2.8.0.blob",
+      "source": "https://public.cr.seqera.io/v2/nextflow/plugin/nf-schema/blobs/sha256:1466fea73502dda8c8059dfe4190be1a857151bc2a500a87a86ffd223918a3f2",
+      "sha256": "1466fea73502dda8c8059dfe4190be1a857151bc2a500a87a86ffd223918a3f2",
+      "digestSource": "https://registry.nextflow.io/plugins/nf-schema@2.8.0",
+      "license": "Apache-2.0",
+      "role": "Optional runtime plugin; not bundled, downloaded, or executed by this prototype."
+    }
+  ]
+}

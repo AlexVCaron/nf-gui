@@ -27,12 +27,12 @@ architecture:
 | Parser mode | Strict parser by default on the audited `26.04` line, with project-version-aware fallback decisions still required | The language server and the audited `nf-lang` path depend on strict-parser semantics, but existing projects may need older language lines or non-strict handling to avoid false positives. |
 | Language server | `nextflow-io/language-server` `v26.04.4` | Current stable audited server release with documented stdio transport and custom graph commands. |
 | Desktop shell | Tauri `2.9.2` PoC baseline | Retained for the prototype. GHSA-7gmj-67g7-phm9 affects Tauri through `2.11.0` on Windows/Android; do not ship or claim support for those targets until upgrading to a patched release (at least `2.11.1`) and re-auditing. |
-| Frontend bridge | `@tauri-apps/api` `2.9.0` PoC candidate | Exact npm artifact metadata is recorded in the audit; verify pairing with Tauri `2.9.2` in the PoC. |
+| Frontend bridge | `@tauri-apps/api` `2.9.0` deferred candidate | Exact npm artifact metadata is recorded in the audit, but the prototype has no Tauri commands and does not include this dependency; prove pairing during Phase 1 integration. |
 | Canvas | `@xyflow/react` `12.11.6` | Current acceptable audited canvas dependency. |
-| Source editor path | Monaco, conservative compatibility line pending phase-1 integration spike | Preserve the planned Monaco direction while avoiding the current unreleased bridge line and keep the worker/CSP proof explicit. |
-| Monaco editor | `0.55.1` | Documented stable compatibility-table entry with `monaco-languageclient` `10.7.0`; retained as a conservative baseline, not described as latest. |
-| Monaco LSP bridge | `monaco-languageclient` `10.7.0` | Documented stable bridge compatible with Monaco `0.55.1`; a newer `11.0.3` release/table discrepancy needs fresh verification before reconsidering. |
-| Monaco VS Code compatibility layer | `@codingame/monaco-vscode-api` `25.1.2` | The aligned compatibility-table entry for `monaco-languageclient` `10.7.0`. |
+| Source editor path | Monaco, with the bridge selection reopened for phase 1 | The prototype uses Monaco `0.57.0` as plain text only. The previously selected stable compatibility set remains a candidate, but its full npm graph surfaced advisories and needs a fresh compatibility/security review before integration. |
+| Monaco editor | `0.55.1` bridge candidate; `0.57.0` standalone PoC | `0.55.1` is the documented stable compatibility-table entry with client `10.7.0`; `0.57.0` is used only by the non-LSP prototype. Both roles must remain distinct. |
+| Monaco LSP bridge | `monaco-languageclient` `10.7.0` deferred | Its current dependency graph includes affected Codingame packages. npm proposed a major update to `11.0.3`; recheck compatibility, lockfiles, and advisories before choosing a bridge. |
+| Monaco VS Code compatibility layer | `@codingame/monaco-vscode-api` `25.1.2` deferred | The old compatibility-table entry is not in the prototype manifest; npm reported versions through `33.0.9` affected and suggested a major update to `39.0.4`. |
 | Optional schema plugin | `nf-schema` `2.8.0` | Keep available as a pinned opt-in runtime plugin rather than a bundled default dependency. |
 
 ## Rejected or deferred baseline alternatives
@@ -65,7 +65,7 @@ reconfiguration on older or not-yet-migrated projects.
 | Project language-line handling | Supported by language-server configuration, not yet designed in nf-gui | The official client can set `nextflow.languageVersion` per workspace and restart the server when that value changes. | nf-gui still needs an explicit policy for detecting a project's declared Nextflow version and choosing the right supported language line or warning/fallback behavior. |
 | Schema dialect handling | Mixed upstream ecosystem; conservative UX decision recorded | nf-schema 2.8.0 is a 2020-12-only validator with Nextflow-specific evaluators; nf-core/tools code has dialect-selection support, despite conflicting migration guidance. | Display schema provenance/dialect and declared metadata separately from validation and effective values; do not infer or auto-convert unknown schemas or execute checks on open. |
 | Available structured edits | Rename plus typed-conversion commands | Official rename returns `WorkspaceEdit`; typed conversion is an execute-command workflow. Parser AST positions exist, but exact editable subranges and cross-version API stability are not established. | No upstream structured edit API exists for visual graph rewiring, port creation, or argument-binding edits; source-preserving adapter edits remain unproven. |
-| Release compatibility | Stable server release line plus conservative frontend/editor candidate | Java 17+, Nextflow 26.04 semantics, Tauri 2.9.2 for PoC only, Monaco compatibility-table set. | Tauri 2.9.2 is affected by GHSA-7gmj-67g7-phm9 on Windows/Android; upgrade to a patched release before shipping/supporting those targets. Actual app dependency graph and packaged editor transport/workers remain unverified. |
+| Release compatibility | Stable server release line plus conservative frontend/editor candidates | Java 17+, Nextflow 26.04 semantics, Tauri 2.9.2 for PoC only, and the separately reviewed Monaco compatibility set. | The PoC graph exists but has unresolved npm/RustSec findings and a known Tauri GHSA; upgrade and re-audit before Windows/Android shipment. Packaged editor transport/workers remain unverified. |
 
 ## Feature-to-semantics and edit-path matrix
 
@@ -141,9 +141,12 @@ upstream guarantees or completed implementation.
 
 **P0-07 and P0-EXIT remain open.** Tauri `2.9.2` is accepted for the PoC only,
 with the Windows/Android upgrade gate retained. The language-server JAR and
-nf-schema plugin blob digests are recorded, but no application manifests or
-lockfiles exist, so nf-gui's resolved dependency graph and transitive exposure
-cannot be audited. The nf-schema README/build/registry minimum-version discrepancy
-is recorded with a conservative `26.04.0+` use boundary. Do not mark the phase
-exit complete until the actual dependency graph is resolved and the matrix is
-re-reviewed against the initial feature set.
+nf-schema plugin blob digests are recorded. The PoC now has npm and Cargo
+manifests/lockfiles and initial audits, but the npm development graph has five
+high findings, the Rust graph has five denied RustSec warnings, Tauri's known
+GHSA is absent from both scanner outputs, the PoC crate has no declared license,
+and the nf-schema blob could not be downloaded for local verification. The
+nf-schema README/build/registry minimum-version discrepancy remains recorded
+with a conservative `26.04.0+` use boundary. Do not mark the phase exit complete
+until these findings are dispositioned and the matrix is re-reviewed against
+the initial feature set.

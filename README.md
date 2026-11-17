@@ -1,5 +1,13 @@
 # nf-gui
 
+## Prototype
+
+A runnable, explicitly limited Tauri prototype is in [`poc/`](poc/README.md).
+It exercises the frontend/editor/canvas shell and establishes JavaScript and
+Rust lockfiles plus reusable artifact-integrity and dependency-audit checks.
+It is not a functional workflow editor; its remaining security and dependency
+blockers are recorded in the [P0-07 findings](docs/plan/phase-0-audit-findings.md#p0-07-candidate-dependency-and-supply-chain-snapshot).
+
 ## Development plan
 
 Contributors and agents: start with [PLAN.md](PLAN.md) for the Nextflow-native
