@@ -83,7 +83,8 @@ contents in reports.
 - `npm run tauri build` reached the Rust build but could not complete because
   `glib-2.0` development metadata is absent; the generator also detected
   missing `webkit2gtk` and `rsvg2`   prerequisites. Internal Markdown file links and `git diff --check` passed.
-  Secret scanning found no secrets; CodeQL will run after the code commit.
+  Secret scanning found no secrets. CodeQL reported no JavaScript alerts but
+  timed out before completing all languages; do not treat that as a full scan.
 
 ### Limitations and next steps
 
