@@ -45,7 +45,7 @@ contents in reports.
 - Reviewed the cited upstream implementation/test pages and pinned source references; the linked language-server and parser test pages were retrievable.
 - This was source/test inspection only. No upstream test suites were run.
 - No application test, build, or lint suite applies; the repository contains planning documentation only.
-- Local whitespace and secret checks passed; local links were reviewed. CodeQL review remains to be run for this documentation-only change.
+- Local whitespace and secret checks passed; local links were reviewed. CodeQL ran after the documentation commit and skipped the changes as trivial.
 
 ### Limitations and next steps
 
