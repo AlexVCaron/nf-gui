@@ -30,6 +30,9 @@ in [phase-0-capability-matrix.md](phase-0-capability-matrix.md).
 - No registered code-action or signature-help provider was found in the current capability set.
 - Unsaved-buffer support is real through the in-memory file cache and incremental `didOpen`/`didChange` updates, but request behavior is uneven: completion/formatting/custom commands recompile eagerly while definition/hover/references/rename/call hierarchy can lag the debounce window and therefore return stale analysis.
 - Graph/structure is not exposed as a standard LSP method; current graph/project features ride custom commands, and `previewWorkspace` returns only a narrow schema (`name`, `type`, `path`, `line`, optional `children`).
+- Version-pinned tests in `v26.04.4` cover a basic incomplete `workflow {` diagnostic and clearing that diagnostic after a fix; they do not establish broad behavior during malformed edit sequences. The inspected diagnostics publisher does not attach a document version, so clients cannot use the LSP diagnostic version field to reject stale diagnostics.
+- Stronger tests on language-server commit `126aaafbdf3cccb00c965e51495dad63f9930c23` cover cancellation during requests and workspace builds, stale position requests, versioned diagnostics, per-file failures, and retry/recovery. This is newer `main`, not the selected `v26.04.4` baseline, and must not be used to claim those guarantees for the pinned artifact.
+- Server-internal recovery is distinct from process restart: current `main` tests orderly shutdown and failure containment, but no real child-process crash/restart and document-resynchronization test was found. The official extension provides manual and configuration-triggered restart behavior; failed startup reports an error, and failed stop offers a window reload. Automatic crash recovery was not established.
 
 Key evidence:
 
@@ -37,6 +40,12 @@ Key evidence:
 - [`WorkspacePreviewProvider.java`](https://github.com/nextflow-io/language-server/blob/master/src/main/java/nextflow/lsp/services/script/WorkspacePreviewProvider.java)
 - [`LanguageService.java`](https://github.com/nextflow-io/language-server/blob/master/src/main/java/nextflow/lsp/services/LanguageService.java)
 - [`FileCache.java`](https://github.com/nextflow-io/language-server/blob/master/src/main/java/nextflow/lsp/file/FileCache.java)
+- [`ScriptDiagnosticsTest.groovy` at `v26.04.4`](https://github.com/nextflow-io/language-server/blob/v26.04.4/src/test/groovy/nextflow/lsp/services/script/ScriptDiagnosticsTest.groovy)
+- [`EngineTest.java` at `126aaafb`](https://github.com/nextflow-io/language-server/blob/126aaafbdf3cccb00c965e51495dad63f9930c23/src/test/java/nextflow/lsp/engine/EngineTest.java)
+- [`WorkspaceBuildTest.java` at `126aaafb`](https://github.com/nextflow-io/language-server/blob/126aaafbdf3cccb00c965e51495dad63f9930c23/src/test/java/nextflow/lsp/engine/WorkspaceBuildTest.java)
+- [`LanguageServerWiringTest.java` at `126aaafb`](https://github.com/nextflow-io/language-server/blob/126aaafbdf3cccb00c965e51495dad63f9930c23/src/test/java/nextflow/lsp/LanguageServerWiringTest.java)
+- [`NextflowLanguageServerTest.java` at `126aaafb`](https://github.com/nextflow-io/language-server/blob/126aaafbdf3cccb00c965e51495dad63f9930c23/src/test/java/nextflow/lsp/NextflowLanguageServerTest.java)
+- [Official extension server lifecycle at `1a28fdb`](https://github.com/nextflow-io/vscode-language-nextflow/blob/1a28fdb18f435a7e62606e89623e753a2301e786/src/languageServer/index.ts)
 - [language-server README](https://github.com/nextflow-io/language-server/blob/master/README.md)
 
 ### P0-02 — Official editor integration
@@ -45,6 +54,7 @@ Key evidence:
 - The extension launches the language server through `vscode-languageclient` over stdio, downloads the latest matching patch release into `~/.nextflow/lsp/<version>`, and falls back to the local cache when GitHub is unavailable.
 - Java 17+ is required unless a native language-server binary is already present in the same cache directory.
 - The extension restarts the server when `nextflow.java.home` or `nextflow.languageVersion` changes and provides explicit restart/stop commands for recovery.
+- These are manual and configuration-triggered recovery paths; the inspected extension evidence does not establish automatic restart after a child-process crash or recovery of open-buffer state after restart.
 - DAG preview is not a generic editor graph layer: the extension calls the server command `nextflow.server.previewDag`; the project webview calls `nextflow.server.previewWorkspace`.
 - The project webview supplements official data with local regex parsing of `.nf.test` files, so not all structure shown in the extension is coming from the language server.
 - The current extension appears to refresh its project view from save/file events rather than from every unsaved edit, so server support for unsaved buffers does not automatically mean every editor-side overview stays live.
@@ -63,6 +73,9 @@ Key evidence:
 - The current strict-parser stack is centered on the shared `nf-lang` module. The ADR describes parse/analyze support for Nextflow-specific AST nodes such as `ScriptNode`, `ProcessNode`, `WorkflowNode`, and `IncludeNode`, plus include resolution, name checking, and only minimal type checking for process/workflow calls.
 - There is a real parse/analyze-only path: `ScriptParser` parses sources, recursively resolves modules, captures comments, resolves includes/names, and performs type checking without immediately entering the runtime script-execution path.
 - AST/source ranges are real: `PositionConfigureUtils` stamps nodes with start/end line and column information, which is promising for a thin editor adapter.
+- Those generic AST positions do not establish an exact editable-range contract. The audited `v26.04.6` parser tests check parser/diagnostic behavior but do not assert source slices or round-trip edits for the required declarations, input/output items, invocation arguments, aliases, and literal expressions; even token and AST position conventions differ. Exact ranges for the proposed edit subset therefore remain unproven.
+- `plugin/...` includes receive placeholder function targets instead of resolved plugin signatures. A newer `nf-lang` test confirms that a typed script can call a plugin function and use its dynamically typed result without errors; this establishes permissive placeholder behavior, not known arguments, types, outputs, or editable ports. Keep such calls opaque for signature-dependent GUI operations.
+- `ScriptParser` exposes public parse/analyze/compiler entry points, but the audited sources provide no versioned compatibility guarantee. A pinned adapter must isolate these APIs and verify each supported Nextflow version.
 - Core parsing is still runtime-adjacent in other paths. `ScriptLoaderFactory` chooses parser v1/v2 from `NXF_SYNTAX_PARSER`, and `ScriptLoaderV2` compiles source into script classes and can later execute them with `runScript()`.
 - Local include resolution is explicit, but `plugin/...` includes are not resolved semantically to real plugin code in the strict parser; they receive placeholder targets instead, which is a current semantic gap for exact GUI signatures.
 - Remote module support in Nextflow 26.04 adds further side effects: runtime `ModuleResolver` can consult the registry, download tarballs, and install them into project storage.
@@ -76,6 +89,14 @@ Key evidence:
 - [`ResolveIncludeVisitor.java`](https://github.com/nextflow-io/nextflow/blob/master/modules/nf-lang/src/main/java/nextflow/script/control/ResolveIncludeVisitor.java)
 - [`PositionConfigureUtils.java`](https://github.com/nextflow-io/nextflow/blob/master/modules/nf-lang/src/main/java/nextflow/script/parser/PositionConfigureUtils.java)
 - [strict syntax docs](https://github.com/nextflow-io/nextflow/blob/master/docs/strict-syntax.mdx)
+- [`PositionConfigureUtils.java` at Nextflow `v26.04.6`](https://github.com/nextflow-io/nextflow/blob/232b60569865e9a4577e48c1955409238359d6ca/modules/nf-lang/src/main/java/nextflow/script/parser/PositionConfigureUtils.java)
+- [`ScriptAstBuilderTest.groovy` at Nextflow `v26.04.6`](https://github.com/nextflow-io/nextflow/blob/232b60569865e9a4577e48c1955409238359d6ca/modules/nf-lang/src/test/groovy/nextflow/script/parser/ScriptAstBuilderTest.groovy)
+- [`ResolveIncludeVisitor.java` at Nextflow `v26.04.6`](https://github.com/nextflow-io/nextflow/blob/232b60569865e9a4577e48c1955409238359d6ca/modules/nf-lang/src/main/java/nextflow/script/control/ResolveIncludeVisitor.java)
+- [`ResolveIncludeTest.groovy` at Nextflow `v26.04.6`](https://github.com/nextflow-io/nextflow/blob/232b60569865e9a4577e48c1955409238359d6ca/modules/nf-lang/src/test/groovy/nextflow/script/control/ResolveIncludeTest.groovy)
+- [`ScriptParser.java` at Nextflow `v26.04.6`](https://github.com/nextflow-io/nextflow/blob/232b60569865e9a4577e48c1955409238359d6ca/modules/nf-lang/src/main/java/nextflow/script/control/ScriptParser.java)
+- [`ResolveIncludeVisitor.java` at Nextflow `main` commit `122b8944`](https://github.com/nextflow-io/nextflow/blob/122b8944b92d1432c4e17af7d5c55cbae36444ec/modules/nf-lang/src/main/java/nextflow/script/control/ResolveIncludeVisitor.java)
+- [`ResolveIncludeTest.groovy` at Nextflow `main` commit `122b8944`](https://github.com/nextflow-io/nextflow/blob/122b8944b92d1432c4e17af7d5c55cbae36444ec/modules/nf-lang/src/test/groovy/nextflow/script/control/ResolveIncludeTest.groovy)
+- [Strict-parser ADR](https://github.com/nextflow-io/nextflow/blob/master/docs/adr/20250508-strict-syntax-parser.md)
 - [`ScriptLoaderFactory.groovy`](https://github.com/nextflow-io/nextflow/blob/master/modules/nextflow/src/main/groovy/nextflow/script/ScriptLoaderFactory.groovy)
 - [`ScriptLoaderV2.groovy`](https://github.com/nextflow-io/nextflow/blob/master/modules/nextflow/src/main/groovy/nextflow/script/parser/v2/ScriptLoaderV2.groovy)
 - [`ModuleResolver.groovy`](https://github.com/nextflow-io/nextflow/blob/master/modules/nextflow/src/main/groovy/nextflow/module/ModuleResolver.groovy)

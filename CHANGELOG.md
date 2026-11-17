@@ -24,6 +24,37 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-17 21:50 UTC — P0-01/P0-03 test and range audit
+
+### Tasks/status
+
+- **P0-01/P0-02 progressed:** compared selected language-server `v26.04.4` evidence with newer server-main tests and pinned editor lifecycle code. Neither task is complete.
+- **P0-03 progressed:** documented parser source-position/test coverage, plugin placeholders, and parser API stability limits. Neither P0-03 nor P0-04 is complete.
+- **P0-06 evidence refined:** the matrix now distinguishes selected-release guarantees from behavior tested only on newer `main`.
+
+### Work and decisions
+
+- Extended [phase 0 audit findings](docs/plan/phase-0-audit-findings.md) with version-pinned evidence for incomplete-source diagnostics, cancellation, stale/versioned results, failure containment, internal recovery, and editor restart behavior.
+- Confirmed that the `v26.04.4` incomplete-source test is narrow and its inspected diagnostic publisher omits document versions. Newer language-server commit `126aaafbdf3cccb00c965e51495dad63f9930c23` has materially stronger cancellation, freshness, and failure-recovery tests; these do not establish those guarantees for the selected release.
+- Recorded that the official extension at `1a28fdb18f435a7e62606e89623e753a2301e786` exposes manual and configuration-driven server restart, but no process-crash restart and buffer-resynchronization test was found.
+- Recorded that Nextflow `v26.04.6` AST positions and parser tests do not establish exact source-preserving edit ranges for the proposed GUI subset. Plugin calls remain opaque for signature-dependent edits; public parser entry points lack a versioned compatibility guarantee.
+- Updated the capability matrix and work-status rows to reflect the evidence and keep the affected tasks in progress.
+
+### Validation
+
+- Reviewed the cited upstream implementation/test pages and pinned source references; the linked language-server and parser test pages were retrievable.
+- This was source/test inspection only. No upstream test suites were run.
+- No application test, build, or lint suite applies; the repository contains planning documentation only.
+- Local whitespace and secret checks passed; local links were reviewed. CodeQL review remains to be run for this documentation-only change.
+
+### Limitations and next steps
+
+- **P0-01/P0-02:** validate cancellation and failure behavior for the selected server release and prove process restart, buffer resynchronization, and diagnostic recovery in the phase-1 integration spike.
+- **P0-03:** define the supported editable subset and prove exact ranges plus source-preserving round trips for each supported parser version; continue parser initialization side-effect review.
+- **P0-04:** decide parameter-form behavior across nf-schema and nf-core schema dialects.
+- **P0-05/P0-07:** finish the remaining desktop/editor integration, transitive dependency, and provenance decisions.
+- **P0-EXIT** remains blocked, and no new task is checked complete.
+
 ## 2026-09-18 14:16 UTC — Phase 0 capability matrix and baseline selection
 
 ### Tasks/status
