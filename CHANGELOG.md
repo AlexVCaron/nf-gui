@@ -42,7 +42,7 @@ contents in reports.
 ### Validation
 
 - Reviewed the updated baseline and release gate against the primary advisory and crates.io version/checksum metadata.
-- Whitespace and internal Markdown links/anchors passed; secret scanning passed. CodeQL is to run after the documentation commit.
+- Whitespace and internal Markdown links/anchors passed; secret scanning passed. CodeQL ran after the documentation commit and skipped these documentation-only changes as trivial.
 - No application tests/build/lint apply; no code or dependency manifest was added.
 
 ### Limitations and next steps
