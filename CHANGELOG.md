@@ -24,6 +24,32 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-17 — Tauri PoC baseline retained
+
+### Tasks/status
+
+- **P0-05 decision refined:** retain Tauri `2.9.2` for the PoC, as requested; this does not change the advisory finding.
+- **P0-07/P0-EXIT remain blocked:** the PoC version decision is settled, but dependency artifact and resolved-graph evidence is still incomplete.
+
+### Work and decisions
+
+- Updated the capability matrix and P0-05/P0-07 findings to distinguish the PoC baseline from release targets.
+- Tauri `2.9.2` is affected by GHSA-7gmj-67g7-phm9 on Windows/Android. Do not ship or claim support for those targets until upgrading to a patched Tauri version (at least `2.11.1`) and re-auditing.
+- Keep the PoC on bundled trusted content and do not expose external navigation or privileged commands to remote content. This is a conservative exposure boundary, not a fix for the affected dependency.
+- The Tauri advisory database query returned no findings despite the direct advisory's affected range; the discrepancy remains recorded and the direct advisory controls the release gate.
+- Continued P0-07 provenance review: GitHub release metadata provides the `language-server-all.jar` SHA-256 `e1c5da90c7f0565ba9e64ac3c5b58f1215e315d6bfe4414d62ff2d02749e8887`; the Nextflow plugin registry provides nf-schema `2.8.0` blob SHA-256 `1466fea73502dda8c8059dfe4190be1a857151bc2a500a87a86ffd223918a3f2`. Tagged build and registry metadata indicate nf-schema 26.04.0 minimum, while its README says 25.10.0+; recorded the conservative 26.04.0+ boundary.
+
+### Validation
+
+- Reviewed the updated baseline and release gate against the primary advisory and crates.io version/checksum metadata.
+- Whitespace and internal Markdown links/anchors passed; secret scanning passed. CodeQL is to run after the documentation commit.
+- No application tests/build/lint apply; no code or dependency manifest was added.
+
+### Limitations and next steps
+
+- **P0-07:** verify downloaded runtime artifacts against their recorded digests and create actual app manifests/lockfiles before auditing the resolved dependency graph.
+- **Phase 1:** prove the Tauri/`@tauri-apps/api` PoC pair, packaged Monaco worker/CSP, and IPC-to-stdio transport. Upgrade and re-audit Tauri before Windows/Android support or shipment.
+
 ## 2026-11-17 22:04 UTC — Phase 0 audit decisions and dependency blockers
 
 ### Tasks/status

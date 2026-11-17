@@ -26,8 +26,8 @@ architecture:
 | Nextflow engine / parser line for audited semantics | `26.04.6` | Current stable audited release line; strict parser is enabled by default in 26.04+. |
 | Parser mode | Strict parser by default on the audited `26.04` line, with project-version-aware fallback decisions still required | The language server and the audited `nf-lang` path depend on strict-parser semantics, but existing projects may need older language lines or non-strict handling to avoid false positives. |
 | Language server | `nextflow-io/language-server` `v26.04.4` | Current stable audited server release with documented stdio transport and custom graph commands. |
-| Desktop shell | Tauri `2.11.1` candidate | Tauri advisory GHSA-7gmj-67g7-phm9 reports versions through `2.11.0` affected on Windows/Android; crates.io metadata verifies the `2.11.1` release and checksum. Recheck advisories and target support before scaffolding. |
-| Frontend bridge | `@tauri-apps/api` `2.9.0` candidate | Exact npm artifact metadata is recorded in the audit; compatibility with the updated Rust crate must be proven in the phase-1 spike. |
+| Desktop shell | Tauri `2.9.2` PoC baseline | Retained for the prototype. GHSA-7gmj-67g7-phm9 affects Tauri through `2.11.0` on Windows/Android; do not ship or claim support for those targets until upgrading to a patched release (at least `2.11.1`) and re-auditing. |
+| Frontend bridge | `@tauri-apps/api` `2.9.0` PoC candidate | Exact npm artifact metadata is recorded in the audit; verify pairing with Tauri `2.9.2` in the PoC. |
 | Canvas | `@xyflow/react` `12.11.6` | Current acceptable audited canvas dependency. |
 | Source editor path | Monaco, conservative compatibility line pending phase-1 integration spike | Preserve the planned Monaco direction while avoiding the current unreleased bridge line and keep the worker/CSP proof explicit. |
 | Monaco editor | `0.55.1` | Documented stable compatibility-table entry with `monaco-languageclient` `10.7.0`; retained as a conservative baseline, not described as latest. |
@@ -65,7 +65,7 @@ reconfiguration on older or not-yet-migrated projects.
 | Project language-line handling | Supported by language-server configuration, not yet designed in nf-gui | The official client can set `nextflow.languageVersion` per workspace and restart the server when that value changes. | nf-gui still needs an explicit policy for detecting a project's declared Nextflow version and choosing the right supported language line or warning/fallback behavior. |
 | Schema dialect handling | Mixed upstream ecosystem; conservative UX decision recorded | nf-schema 2.8.0 is a 2020-12-only validator with Nextflow-specific evaluators; nf-core/tools code has dialect-selection support, despite conflicting migration guidance. | Display schema provenance/dialect and declared metadata separately from validation and effective values; do not infer or auto-convert unknown schemas or execute checks on open. |
 | Available structured edits | Rename plus typed-conversion commands | Official rename returns `WorkspaceEdit`; typed conversion is an execute-command workflow. Parser AST positions exist, but exact editable subranges and cross-version API stability are not established. | No upstream structured edit API exists for visual graph rewiring, port creation, or argument-binding edits; source-preserving adapter edits remain unproven. |
-| Release compatibility | Stable server release line plus conservative frontend/editor candidate | Java 17+, Nextflow 26.04 semantics, Tauri 2.11.1 minimum candidate, Monaco compatibility-table set. | Tauri 2.9.2 is rejected by GHSA-7gmj-67g7-phm9; actual app dependency graph and packaged editor transport/workers remain unverified. |
+| Release compatibility | Stable server release line plus conservative frontend/editor candidate | Java 17+, Nextflow 26.04 semantics, Tauri 2.9.2 for PoC only, Monaco compatibility-table set. | Tauri 2.9.2 is affected by GHSA-7gmj-67g7-phm9 on Windows/Android; upgrade to a patched release before shipping/supporting those targets. Actual app dependency graph and packaged editor transport/workers remain unverified. |
 
 ## Feature-to-semantics and edit-path matrix
 
@@ -118,8 +118,8 @@ strategy:
    transactions; official `WorkspaceEdit` where upstream already provides it.
 4. **Authoritative runtime boundary:** no implicit execution, plugin start, or
    remote-module installation during ordinary inspection/editing.
-5. **Selected managed toolchain baseline:** Java 17+, Tauri `2.11.1` candidate
-   (replace the rejected `2.9.2`),
+5. **Selected managed toolchain baseline:** Java 17+, Tauri `2.9.2` for the
+   PoC only (upgrade to at least `2.11.1` before Windows/Android release),
    `@tauri-apps/api` `2.9.0`, Nextflow `26.04` semantics, language server
    `v26.04.4`, and conservative stable Monaco compatibility rather than the
    current prerelease bridge line.
@@ -139,9 +139,11 @@ the packaged Monaco workers/CSP and IPC transport; Phases 2/3 must prove exact
 source-edit ranges and round trips. These remain explicit limitations, not
 upstream guarantees or completed implementation.
 
-**P0-07 and P0-EXIT remain open.** No application manifests or lockfiles exist,
-so nf-gui's actual resolved dependency graph and transitive exposure cannot be
-audited. The selected language-server JAR digest and nf-schema 2.8.0 compatibility
-discrepancy also remain unresolved. Do not mark the phase exit complete until
-those dependency decisions and provenance requirements are closed and the matrix
-is re-reviewed against the initial feature set.
+**P0-07 and P0-EXIT remain open.** Tauri `2.9.2` is accepted for the PoC only,
+with the Windows/Android upgrade gate retained. The language-server JAR and
+nf-schema plugin blob digests are recorded, but no application manifests or
+lockfiles exist, so nf-gui's resolved dependency graph and transitive exposure
+cannot be audited. The nf-schema README/build/registry minimum-version discrepancy
+is recorded with a conservative `26.04.0+` use boundary. Do not mark the phase
+exit complete until the actual dependency graph is resolved and the matrix is
+re-reviewed against the initial feature set.
