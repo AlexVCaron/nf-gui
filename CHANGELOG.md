@@ -24,6 +24,39 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-17 22:04 UTC — Phase 0 audit decisions and dependency blockers
+
+### Tasks/status
+
+- **P0-01/P0-02 complete:** selected-release language-server and official editor evidence now covers tested capabilities, protocol, lifecycle, cancellation/freshness limits, and restart boundaries.
+- **P0-03/P0-04 complete:** parser/compiler limitations and conservative schema UX decisions are recorded with version-pinned upstream references.
+- **P0-05 complete:** Tauri/editor permissions, packaging, and compatibility requirements are audited; the production WebView/worker/transport proof remains a Phase 1 integration task.
+- **P0-06/P0-08 remain complete:** the capability matrix and initial semantic/toolchain strategy are updated for the new findings.
+- **P0-07 blocked; P0-EXIT remains open:** the Tauri `2.9.2` candidate falls within a direct advisory's affected range; no application manifests or lockfiles exist, and selected runtime artifacts still lack verified digests or compatibility evidence.
+
+### Work and decisions
+
+- Expanded [phase 0 audit findings](docs/plan/phase-0-audit-findings.md) with the selected language-server release's entry-only cancellation checks and failure/recovery limits; explicitly separated Phase 1 supervisor restart/resynchronization from upstream server behavior.
+- Recorded that the pinned `nf-lang` parse/analyze API does not resolve effective runtime configuration, may use service-loaded remote module resolution with download/install effects, and does not guarantee exact source-edit ranges. These limitations now have conservative architecture dispositions rather than speculative capability claims.
+- Resolved the P0-04 form policy: identify schema dialect/provenance, distinguish declared metadata from official validation/effective values, avoid automatic dialect conversion, and do not execute plugins or inspect files on project open. Documented the nf-schema migration guide versus nf-core/tools compatibility discrepancy.
+- Updated the editor decision to the documented stable Monaco `0.55.1` / monaco-languageclient `10.7.0` / Codingame `25.1.2` set, while keeping production Tauri workers/CSP and the IPC-to-stdio bridge in the Phase 1 spike.
+- Rejected Tauri `2.9.2` for Windows/Android based on [GHSA-7gmj-67g7-phm9](https://github.com/advisories/GHSA-7gmj-67g7-phm9), which identifies `2.11.1` as the first patched version. The GitHub advisory database tool returned no vulnerabilities for the queried set; the direct versioned advisory conflicts with that result and is documented as controlling until reconciled.
+- Added selected npm package SRI records, upstream dependency declarations, and runtime roles. The language-server JAR digest and nf-schema `2.8.0` compatibility remain unverified; without app manifests/lockfiles the actual transitive graph and resolved runtime/development split cannot be established.
+- Updated the tracker and phase-0 capability matrix; P0-EXIT is intentionally not checked because P0-07 remains blocked.
+
+### Validation
+
+- Reviewed version-pinned upstream source/test references and retrievable registry metadata; the GitHub advisory response confirms Tauri `2.0.0`–`2.11.0` affected and `2.11.1` first patched for the cited advisory.
+- The GitHub advisory database tool returned no vulnerabilities for the submitted versions; direct GHSA evidence conflicts, so no clean Tauri conclusion is claimed.
+- Confirmed the repository has no package/Cargo/Gradle manifests or lockfiles; no application tests/build/lint apply. Upstream tests were inspected, not run.
+- Local whitespace, internal Markdown links/anchors, and secret scanning passed. CodeQL is to run after the documentation commit; no application test/build/lint applies.
+
+### Limitations and next steps
+
+- **P0-07/P0-EXIT:** verify the exact replacement Tauri release/artifact and frontend API pair, verify the language-server JAR checksum/attestation, resolve nf-schema's Nextflow-minimum discrepancy, and create real manifests/lockfiles before auditing the resolved dependency graph.
+- **Phase 1:** prove packaged Monaco workers under actual Tauri CSP, IPC-to-stdio LSP transport, supervisor restart, document resynchronization, cancellation, and diagnostic recovery.
+- **Phases 2/3:** define the supported visual-edit subset and test exact parser ranges and source-preserving edit round trips; retain opaque treatment of plugin calls absent official signatures.
+
 ## 2026-11-17 21:50 UTC — P0-01/P0-03 test and range audit
 
 ### Tasks/status

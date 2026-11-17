@@ -26,12 +26,12 @@ architecture:
 | Nextflow engine / parser line for audited semantics | `26.04.6` | Current stable audited release line; strict parser is enabled by default in 26.04+. |
 | Parser mode | Strict parser by default on the audited `26.04` line, with project-version-aware fallback decisions still required | The language server and the audited `nf-lang` path depend on strict-parser semantics, but existing projects may need older language lines or non-strict handling to avoid false positives. |
 | Language server | `nextflow-io/language-server` `v26.04.4` | Current stable audited server release with documented stdio transport and custom graph commands. |
-| Desktop shell | Tauri `2.9.2` | Stable Tauri 2 line with known packaging/security tradeoffs already audited. |
-| Frontend bridge | `@tauri-apps/api` `2.9.0` | Official paired frontend API package for the chosen Tauri line. |
+| Desktop shell | Tauri `2.11.1` candidate | Tauri advisory GHSA-7gmj-67g7-phm9 reports versions through `2.11.0` affected on Windows/Android; crates.io metadata verifies the `2.11.1` release and checksum. Recheck advisories and target support before scaffolding. |
+| Frontend bridge | `@tauri-apps/api` `2.9.0` candidate | Exact npm artifact metadata is recorded in the audit; compatibility with the updated Rust crate must be proven in the phase-1 spike. |
 | Canvas | `@xyflow/react` `12.11.6` | Current acceptable audited canvas dependency. |
 | Source editor path | Monaco, conservative compatibility line pending phase-1 integration spike | Preserve the planned Monaco direction while avoiding the current unreleased bridge line and keep the worker/CSP proof explicit. |
-| Monaco editor | `0.55.1` | Latest stable version aligned with stable `monaco-languageclient` `10.7.0` in the upstream compatibility table. |
-| Monaco LSP bridge | `monaco-languageclient` `10.7.0` | Latest stable audited bridge version compatible with Monaco `0.55.1`. |
+| Monaco editor | `0.55.1` | Documented stable compatibility-table entry with `monaco-languageclient` `10.7.0`; retained as a conservative baseline, not described as latest. |
+| Monaco LSP bridge | `monaco-languageclient` `10.7.0` | Documented stable bridge compatible with Monaco `0.55.1`; a newer `11.0.3` release/table discrepancy needs fresh verification before reconsidering. |
 | Monaco VS Code compatibility layer | `@codingame/monaco-vscode-api` `25.1.2` | The aligned compatibility-table entry for `monaco-languageclient` `10.7.0`. |
 | Optional schema plugin | `nf-schema` `2.8.0` | Keep available as a pinned opt-in runtime plugin rather than a bundled default dependency. |
 
@@ -39,7 +39,7 @@ architecture:
 
 | Alternative | Status | Reason |
 |---|---|---|
-| `monaco-editor` `0.56.0` + `monaco-languageclient` `11.0.0-next.3` | Deferred | Works only on the current unreleased bridge line; avoid taking prerelease dependency risk before phase 1 proves the editor path. |
+| `monaco-editor` `0.56.0` + `monaco-languageclient` `11.0.0-next.3` | Not selected | Newer TypeFox docs report `11.0.3`, while the compatibility table still labels that row unreleased; verify release status, compatibility, provenance, and risk before reconsidering. |
 | Runtime Nextflow DAG as the workflow-canvas authority | Rejected | Runtime DAG generation is an execution/dataflow artifact, not a safe source-editing authority. |
 | Treating nf-core module metadata as the primary semantic model | Rejected | Helpful metadata, but not authoritative for runtime semantics or all projects. |
 | Bundling nf-schema as a default application dependency | Rejected | Keep as an optional pinned runtime plugin because it is runtime-fetched and not universally present. |
@@ -58,14 +58,14 @@ reconfiguration on older or not-yet-migrated projects.
 | Custom commands | `nextflow.server.previewDag`, `nextflow.server.previewWorkspace`, `nextflow.server.convertPipelineToTyped`, `nextflow.server.convertScriptToTyped` | Exposed as execute-command entries rather than standard LSP methods. | These commands are editor-facing extensions, not a stable standard protocol. |
 | Structural payloads | Workspace preview plus DAG preview | `previewWorkspace` returns a narrow definition-oriented schema (`name`, `type`, `path`, `line`, optional `children`); `previewDag` returns Mermaid text or an error. | No public typed graph schema for ports, edges, argument bindings, or editable invocation instances. |
 | Unsaved buffers | Supported at the server level | In-memory file cache and incremental updates let open buffers be analyzed before save. | Editor-side overview refresh can lag unsaved edits, and some request families can return stale results during the debounce window. |
-| Cancellation | Limited evidence on selected `v26.04.4` baseline; stronger behavior tested on newer `main` | `v26.04.4` request handlers use cancellation checks. Server commit `126aaafb` tests cancellation during requests and workspace builds, but is newer than the selected release. | Do not assume newer-main cancellation/recovery behavior exists in the pinned artifact; deeper analysis cancellation and the selected-release failure paths remain unproven. |
+| Cancellation | Entry check only established on selected `v26.04.4` baseline; stronger behavior tested on newer `main` | `v26.04.4` request wrappers check cancellation before dispatch; inspected code does not establish cooperative cancellation during service analysis. Server commit `126aaafb` tests cancellation during requests and workspace builds, but is newer than the selected release. | Do not assume newer-main cancellation/recovery behavior exists in the pinned artifact; cancellation during analysis and selected-release failure recovery remain unproven. |
 | Stale-result behavior | Partially characterized on selected `v26.04.4` baseline | Some request families can observe the debounce window; the inspected diagnostics publisher omits document versions. Newer-main tests exercise version checks and versioned diagnostics. | Stale analysis/diagnostics remain a risk for the selected release; newer-main freshness guarantees are not part of the selected baseline. |
 | Cross-file resolution | Supported for local includes and several symbol operations | Definition/reference/rename flows work across local modules; include resolution and dependency-ordered analysis are implemented. | Plugin includes resolve only to placeholders in strict parsing, and remote module/runtime install paths are not safe semantic defaults for untrusted inspection. |
 | Supported Nextflow syntax | Strict-parser-centered 26.04 language line | The selected baseline assumes strict-parser semantics and typed-parameter support. | Minimal strict-parser call typing and unsupported legacy Groovy patterns limit what the GUI can treat as safely editable. |
 | Project language-line handling | Supported by language-server configuration, not yet designed in nf-gui | The official client can set `nextflow.languageVersion` per workspace and restart the server when that value changes. | nf-gui still needs an explicit policy for detecting a project's declared Nextflow version and choosing the right supported language line or warning/fallback behavior. |
-| Schema dialect handling | Mixed upstream ecosystem | nf-schema is effectively 2020-12 only, while nf-core tools still span draft-07 and 2020-12 conventions. | Parameter-form UX must distinguish native typed params, nf-schema semantics, and nf-core metadata without assuming one dialect or source is universal. |
+| Schema dialect handling | Mixed upstream ecosystem; conservative UX decision recorded | nf-schema 2.8.0 is a 2020-12-only validator with Nextflow-specific evaluators; nf-core/tools code has dialect-selection support, despite conflicting migration guidance. | Display schema provenance/dialect and declared metadata separately from validation and effective values; do not infer or auto-convert unknown schemas or execute checks on open. |
 | Available structured edits | Rename plus typed-conversion commands | Official rename returns `WorkspaceEdit`; typed conversion is an execute-command workflow. Parser AST positions exist, but exact editable subranges and cross-version API stability are not established. | No upstream structured edit API exists for visual graph rewiring, port creation, or argument-binding edits; source-preserving adapter edits remain unproven. |
-| Release compatibility | Stable server release line plus stable frontend/editor line | Java 17+, Nextflow 26.04 semantics, Tauri 2.9.2, conservative Monaco compatibility line. | Upstream current Monaco head is newer than the stable bridge line, so the project must pin carefully rather than follow “latest”. |
+| Release compatibility | Stable server release line plus conservative frontend/editor candidate | Java 17+, Nextflow 26.04 semantics, Tauri 2.11.1 minimum candidate, Monaco compatibility-table set. | Tauri 2.9.2 is rejected by GHSA-7gmj-67g7-phm9; actual app dependency graph and packaged editor transport/workers remain unverified. |
 
 ## Feature-to-semantics and edit-path matrix
 
@@ -118,7 +118,8 @@ strategy:
    transactions; official `WorkspaceEdit` where upstream already provides it.
 4. **Authoritative runtime boundary:** no implicit execution, plugin start, or
    remote-module installation during ordinary inspection/editing.
-5. **Selected managed toolchain baseline:** Java 17+, Tauri `2.9.2`,
+5. **Selected managed toolchain baseline:** Java 17+, Tauri `2.11.1` candidate
+   (replace the rejected `2.9.2`),
    `@tauri-apps/api` `2.9.0`, Nextflow `26.04` semantics, language server
    `v26.04.4`, and conservative stable Monaco compatibility rather than the
    current prerelease bridge line.
@@ -129,18 +130,18 @@ strategy:
    managed JRE distribution remains a later packaging decision, not a closed
    upstream-audit fact.
 
-## Remaining blockers for Phase 0 exit
+## Phase 0 disposition
 
-These selections complete **P0-06** and **P0-08**, but do not complete
-**P0-EXIT**:
+P0-01 through P0-06 and P0-08 have evidence-backed research dispositions in
+[phase-0-audit-findings.md](phase-0-audit-findings.md). Operational tests belong
+to the implementation phases: Phase 1 must prove process restart/resynchronization,
+the packaged Monaco workers/CSP and IPC transport; Phases 2/3 must prove exact
+source-edit ranges and round trips. These remain explicit limitations, not
+upstream guarantees or completed implementation.
 
-- P0-01 still needs stronger evidence for invalid/incomplete-source,
-  cancellation, and stale-result coverage.
-- P0-03 still needs stronger proof that the required editable subconstructs have
-  stable enough source-location coverage for the intended safe subset.
-- P0-05/P0-07 still need any remaining transitive/provenance follow-up the
-  project wants before turning the selected baseline into real manifests, and
-  phase 1 still needs the Monaco worker/CSP spike before the editor path can be
-  considered fully proven.
-- The exact safe visual-editing subset must still be frozen in phases 2 and 3
-  based on the adapter proof, not on speculation.
+**P0-07 and P0-EXIT remain open.** No application manifests or lockfiles exist,
+so nf-gui's actual resolved dependency graph and transitive exposure cannot be
+audited. The selected language-server JAR digest and nf-schema 2.8.0 compatibility
+discrepancy also remain unresolved. Do not mark the phase exit complete until
+those dependency decisions and provenance requirements are closed and the matrix
+is re-reviewed against the initial feature set.

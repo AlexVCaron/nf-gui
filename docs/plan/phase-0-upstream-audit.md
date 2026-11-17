@@ -20,9 +20,11 @@ Complete the upstream audit before treating architectural assumptions as proven:
 semantics and performs its edits. No frontend architecture decision should hide
 an unresolved semantic dependency.
 
-**Evidence status:** these are research tasks and candidate dependencies, not
-verified findings or version-pinned selections. The initial plan did not perform
-the live web/source audit.
+**Evidence status:** the initial plan did not perform the live audit. Follow-up
+research and decisions are recorded in
+[phase-0-audit-findings.md](phase-0-audit-findings.md) and
+[phase-0-capability-matrix.md](phase-0-capability-matrix.md); P0-07 and the phase
+exit remain blocked on dependency provenance and the resolved application graph.
 
 ## Current audit snapshot
 
