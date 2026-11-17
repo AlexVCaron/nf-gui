@@ -49,7 +49,7 @@ contents in reports.
 - Reviewed version-pinned upstream source/test references and retrievable registry metadata; the GitHub advisory response confirms Tauri `2.0.0`–`2.11.0` affected and `2.11.1` first patched for the cited advisory.
 - The GitHub advisory database tool returned no vulnerabilities for the submitted versions; direct GHSA evidence conflicts, so no clean Tauri conclusion is claimed.
 - Confirmed the repository has no package/Cargo/Gradle manifests or lockfiles; no application tests/build/lint apply. Upstream tests were inspected, not run.
-- Local whitespace, internal Markdown links/anchors, and secret scanning passed. CodeQL is to run after the documentation commit; no application test/build/lint applies.
+- Local whitespace, internal Markdown links/anchors, and secret scanning passed. CodeQL ran after the documentation commit and skipped the changes as trivial; no application test/build/lint applies.
 
 ### Limitations and next steps
 
