@@ -1,4 +1,5 @@
 pub mod lsp_framing;
+pub mod lsp_process;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
