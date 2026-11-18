@@ -56,6 +56,9 @@ contents in reports.
 - `npm run build` passed; the existing Monaco chunk-size warning remains.
 - `npm ci` restored lockfile dependencies and reported the five existing high
   npm findings. No dependency was added for this adapter.
+- Post-commit CodeQL reported zero JavaScript alerts, but timed out before all
+  languages completed. This is a partial scan; the tool said another run will
+  not complete successfully, so no retry was made.
 - Integrated Tauri tests/build and real-server runtime were not run: Linux
   GIO/GLib development metadata is missing, and the pinned JAR is not staged.
 
