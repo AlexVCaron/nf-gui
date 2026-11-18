@@ -24,6 +24,38 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-18 — Add capability-gated completion
+
+### Tasks/status
+
+- **P1-02 in progress:** added Monaco completion requests to the single-buffer
+  adapter; pinned-server and native Tauri validation remain outstanding.
+
+### Work and decisions
+
+- Register completion only when the server advertises `completionProvider`.
+  Forward trigger characters and LSP completion context, honor Monaco
+  cancellation, and map supported labels, kinds, insertion/snippet text,
+  text edits, documentation, and incomplete-list state.
+- Extracted defensive completion-result normalization and added tests for array
+  and list responses, incomplete lists, malformed items, and invalid shapes.
+  No new dependencies were introduced.
+
+### Validation
+
+- `npm test` passed all 14 tests; `npm run build` passed with the existing
+  Monaco chunk-size warning.
+- Rust formatting and whitespace checks passed. Native Tauri/server testing
+  remains unavailable because the pinned JAR is not staged and this environment
+  lacks Linux GIO/GLib development metadata.
+
+### Limitations and next steps
+
+- Exercise completion, hover, diagnostics, and version synchronization against
+  the pinned server in a native Tauri build. Keep P1 in progress and P2 paused.
+- Follow the Phase 1 plan's headless Actions and optional Codespace/native
+  reviewer strategy only after the actual runtime integration is tested.
+
 ## 2026-11-18 — Harden LSP ordering and process-exit handling
 
 ### Tasks/status

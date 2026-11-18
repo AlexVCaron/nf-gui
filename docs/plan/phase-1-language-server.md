@@ -103,13 +103,13 @@ The typed client uses the pinned `@tauri-apps/api` `2.9.0` package; the advisory
 database reported no findings for this package/version. Its API-to-Rust pairing
 is implemented. The PoC UI now has explicit connect/stop controls for one
 in-memory sample document. The provider prototype performs initialize/open,
-advertised text synchronization, diagnostic marker mapping, and hover requests
-when supported; it sends shutdown/exit on stop. Protocol framing, request
-correlation, cancellation, timeout, write ordering, and closure have focused
-tests. Outbound JSON-RPC frames are serialized so edits reach the server in
-document-version order. An explicit Tauri exit channel now tears down editor
-providers and markers when the child stops unexpectedly and lets the UI offer
-a retry.
+advertised text synchronization, diagnostic marker mapping, and completion and
+hover requests when supported; it sends shutdown/exit on stop. Protocol framing,
+completion-result normalization, request correlation, cancellation, timeout,
+write ordering, and closure have focused tests. Outbound JSON-RPC frames are
+serialized so edits reach the server in document-version order. An explicit
+Tauri exit channel now tears down editor providers and markers when the child
+stops unexpectedly and lets the UI offer a retry.
 Startup checks for a process exit after both transport startup and document open,
 and the UI confirms the returned session is still active before marking it
 connected.
@@ -149,9 +149,12 @@ a local network port.
 
 The PoC now prototypes that adapter for one sample buffer: it negotiates server
 capabilities, synchronizes edits, maps published diagnostics to Monaco markers,
-and registers hover only when advertised. It remains in progress until tested
-with the pinned server and native Tauri runtime; cancellation, disposal, and
-document-version handling also require end-to-end verification.
+and registers completion and hover only when advertised. Completion results
+preserve supported labels, kinds, insertion text/snippets, text edits,
+documentation, and incomplete-list state; malformed list items are ignored.
+It remains in progress until tested with the pinned server and native Tauri
+runtime; cancellation, disposal, and document-version handling also require
+end-to-end verification.
 
 Do not add `monaco-languageclient` `10.7.0`: the upstream compatibility table
 pairs that release with Monaco `0.55.1`. The same table lists `11.0.2` with

@@ -17,8 +17,8 @@ license does not replace those obligations.
 The editor and graph are independent examples: changing the editor does not
 change the graph. The editor now has explicit connect/stop controls for the
 supervised LSP transport. When connected, it opens one in-memory sample buffer,
-synchronizes edits, displays server diagnostics, and requests hover information
-if the server advertises support. The graph remains static and is not derived
+syncs edits, displays server diagnostics, and provides completion and hover if
+the server advertises support. The graph remains static and is not derived
 from the server.
 
 The Rust commands only launch fixed `java -jar` with the packaged
