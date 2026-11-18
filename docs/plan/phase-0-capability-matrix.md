@@ -142,11 +142,14 @@ upstream guarantees or completed implementation.
 **P0-07 and P0-EXIT remain open.** Tauri `2.9.2` is accepted for the PoC only,
 with the Windows/Android upgrade gate retained. The language-server JAR and
 nf-schema plugin blob digests are recorded. The PoC now has npm and Cargo
-manifests/lockfiles and initial audits, but the npm development graph has five
-high findings, the Rust graph has five denied RustSec warnings, Tauri's known
-GHSA is absent from both scanner outputs, the PoC crate has no declared license,
-and the nf-schema blob could not be downloaded for local verification. The
-nf-schema README/build/registry minimum-version discrepancy remains recorded
-with a conservative `26.04.0+` use boundary. Do not mark the phase exit complete
-until these findings are dispositioned and the matrix is re-reviewed against
-the initial feature set.
+manifests/lockfiles, artifact verifier, and combined npm/Rust audit runner, but
+the npm development graph has five high findings and the Rust lockfile has five
+denied RustSec warnings (including one optional-only entry). The Vite downgrade
+suggested by npm is affected by separate Vite advisories, while the patched Vite
+6.4.4 line still depends on vulnerable picomatch. Tauri's known GHSA is absent
+from both scanner outputs, the PoC crate has no declared license, and the
+nf-schema blob could not be downloaded for local verification. The nf-schema
+README/build/registry minimum-version discrepancy remains recorded with a
+conservative `26.04.0+` use boundary. Do not mark the phase exit complete until
+these findings are dispositioned and the matrix is re-reviewed against the
+initial feature set.

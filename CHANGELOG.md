@@ -24,6 +24,56 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-18 — Make dependency audits complete and actionable
+
+### Tasks/status
+
+- **P0-07 advanced but remains blocked; P0-EXIT remains open.** Added a combined
+  audit runner so both package ecosystems are checked even when one scanner
+  fails. Current dependency/license/provenance issues still prevent closure.
+
+### Work and decisions
+
+- Added `npm run audit:dependencies`, which runs npm and Cargo advisory scans
+  sequentially and fails if either does. Added tests for both continuing after
+  an npm failure and reporting success when both checks pass.
+- Corrected the Vite fallback rationale: Vite `6.2.7` is within separate
+  dev-server WebSocket and `launch-editor` affected ranges; Vite `6.4.4` still
+  depends on vulnerable `picomatch`. No safe Vite-only downgrade was identified.
+- Refined RustSec exposure notes: `chrono` is an optional `serde_with` lockfile
+  entry with no active path in `cargo tree --target all`; the other four
+  findings are reachable through Tauri's transitive/platform dependencies.
+- Recorded that the PoC crate has no declared license. No license should be
+  inferred; an owner decision is needed before public redistribution, not for
+  continuing internal prototype work.
+
+### Validation
+
+- `npm test` passed all seven tests; `npm run build` passed with the existing
+  Monaco chunk-size warning.
+- Fresh `npm audit --omit=dev --audit-level=moderate` passed with zero
+  vulnerabilities. Full `npm audit` still reports five high findings.
+- `cargo audit --deny warnings` ran against the locked graph and denied five
+  RustSec findings. The combined command was verified to execute Cargo after
+  npm fails and to return failure when either audit fails.
+- `npm view vite@6.4.4 dependencies` confirmed its `picomatch` `^4.0.2`
+  dependency. Advisory review confirmed the downgrade ranges recorded above.
+- Native Tauri build remains unverified because Linux GTK/WebKit development
+  prerequisites are absent. nf-schema artifact verification remains blocked by
+  registry DNS resolution. No new license or platform support claim was made.
+
+### Limitations and next steps
+
+- **P0-07:** keep the existing baseline and do not force a Vite downgrade.
+  Re-run advisory checks when picomatch gains a patched release or the toolchain
+  changes; recover nf-schema registry access and verify its digest/provenance;
+  review the deferred LSP bridge before adding it. A maintainer license decision
+  is only needed before public redistribution.
+- **P0-EXIT:** remains open until P0-07 findings are dispositioned and the
+  complete evidence matrix is reviewed.
+- **Tauri:** retain `2.9.2` for the PoC as directed; upgrade and re-audit before
+  Windows/Android shipment or support.
+
 ## 2026-11-17 — Scaffolded the reusable Tauri prototype
 
 ### Tasks/status

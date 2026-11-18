@@ -60,13 +60,20 @@ snapshot is intentionally required.
 At this baseline, `npm audit` reports five high-severity findings in the Vite
 development/build chain through `picomatch` 4.0.7 (`GHSA-fc5q-39xc-vjpf`). The
 advisory has no patched picomatch release available. npm suggests downgrading
-Vite to 6.2.7, but that falls within Tauri's separately recorded
-`launch-editor` affected range through Vite 6.4.3; do not apply that downgrade
-or use `npm audit fix` to silence the finding. Keep the dev server loopback-only
-and re-run both advisory checks whenever the lockfile changes.
+Vite to 6.2.7, but the advisory review also flags that Vite line for a
+dev-server WebSocket file-read issue (through 6.4.1) and a separate
+`launch-editor` issue (through 6.4.3). Vite 6.4.4 includes the latter fixes but
+still depends on the affected `picomatch` range. Do not apply a Vite-only
+downgrade or use `npm audit fix` to silence the finding. Keep the dev server
+loopback-only and re-run both advisory checks whenever the lockfile changes.
 
 The current `cargo audit --deny warnings` also reports five RustSec warnings in
-the resolved graph (three unmaintained crates and two unsoundness advisories).
+the lockfile (three unmaintained crates and two unsoundness advisories).
+The `chrono` warning is present in Cargo.lock through an optional `serde_with`
+feature but has no active dependency path in `cargo tree --target all`; the
+other warnings are reachable through Tauri's transitive dependencies, including
+platform-specific GTK/WebKit dependencies. Cargo-audit checks locked packages,
+including optional entries.
 The RustSec database did not report the separate Tauri 2.9.2 Windows/Android
 GHSA. Keep both results visible; do not treat the tool's exit status as an
 override of the upstream advisory or the unresolved warnings.
@@ -78,6 +85,10 @@ so the explicit advisory controls: do not ship or claim Windows/Android support
 until Tauri is upgraded to a patched version (at least 2.11.1) and the full
 dependency graph is re-audited. A passing scanner result cannot override a
 known advisory.
+
+The prototype crate does not declare a project license. Do not infer one from
+dependency licenses; a maintainer decision is required before public
+redistribution, but does not prevent internal PoC iteration.
 
 ### Verify optional runtime artifacts
 
