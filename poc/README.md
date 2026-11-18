@@ -15,13 +15,17 @@ license does not replace those obligations.
   and nf-schema plugin blob.
 
 The editor and graph are independent examples: changing the editor does not
-change the graph. The Rust crate now contains bounded LSP framing, a child
-process supervisor, and narrow Tauri IPC commands, but the UI does not start or
-use them. The commands only launch fixed `java -jar` with the packaged
+change the graph. The editor now has explicit connect/stop controls for the
+supervised LSP transport. When connected, it opens one in-memory sample buffer,
+synchronizes edits, displays server diagnostics, and requests hover information
+if the server advertises support. The graph remains static and is not derived
+from the server.
+
+The Rust commands only launch fixed `java -jar` with the packaged
 `artifacts/language-server-all.jar` after checking its pinned SHA-256. The JAR
-is not committed; without it, language-server startup returns an error. From
-the `poc/` directory, download the selected release into `artifacts/` and verify
-it before building:
+is not committed; without it, language-server startup returns an error in the
+editor status. From the `poc/` directory, download the selected release into
+`artifacts/` and verify it before building:
 
 ```sh
 curl -fL https://github.com/nextflow-io/language-server/releases/download/v26.04.4/language-server-all.jar \
@@ -31,9 +35,10 @@ echo 'e1c5da90c7f0565ba9e64ac3c5b58f1215e315d6bfe4414d62ff2d02749e8887  artifact
 ```
 
 The bundle configuration includes files placed in `artifacts/`; the runtime
-repeats the digest check before launching. The prototype still has no workspace
-file access, pipeline execution, plugin loading, automatic downloads, active
-editor bridge, or external navigation. Do not use it to open or analyze an
+repeats the digest check before launching. This remains a single-buffer
+integration spike: it has no project workspace/file access, pipeline execution,
+plugin loading, automatic downloads, or cross-file navigation. The model uses a
+synthetic URI and changes are not saved. Do not use it to open or analyze an
 untrusted workflow.
 
 The selected server requires Java 17 or newer. After staging and verifying the

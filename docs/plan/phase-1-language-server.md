@@ -101,14 +101,34 @@ frontend.
 
 The typed client uses the pinned `@tauri-apps/api` `2.9.0` package; the advisory
 database reported no findings for this package/version. Its API-to-Rust pairing
-is implemented but awaits native compilation and an end-to-end desktop run.
+is implemented. The PoC UI now has explicit connect/stop controls for one
+in-memory sample document. The provider prototype performs initialize/open,
+advertised text synchronization, diagnostic marker mapping, and hover requests
+when supported; it sends shutdown/exit on stop. Protocol framing, request
+correlation, cancellation, timeout, and closure have focused tests.
 
 The JAR is intentionally not committed or downloaded automatically. The local
 experiment instructions in [the PoC README](../../poc/README.md) show how to
-stage the already-pinned release for packaging. Until the artifact is staged and
-the commands are exercised against the real server, LSP initialize/shutdown
-sequencing, workspace lifecycle, process-tree management, restart recovery, and
-the frontend Monaco adapter remain unproven; the UI still does not start an LSP.
+stage the already-pinned release for packaging. The adapter has not yet been
+exercised against the real server or through a native Tauri build. Workspace
+lifecycle, process-tree management, restart recovery, cross-file behavior, and
+the full Monaco feature set remain unproven.
+
+### Validation delivery: headless CI and human review
+
+Plan repeatable, headless validation in GitHub Actions for frontend tests/build,
+Rust tests with Tauri's native Linux prerequisites, and integrity checks for
+the pinned server artifact. A real-server integration job should download only
+the exact pinned release, verify its SHA-256, and test the protocol lifecycle;
+do not commit the JAR or bypass its runtime verification.
+
+Interactive review is a separate, optional layer. Once the editor bridge is
+usable, reviewers can use a native desktop build or a Codespace configured with
+a remote desktop (for example, VNC/noVNC) to try the connect/diagnostics/hover
+flow. Forwarding only the Vite browser page is not sufficient to validate Tauri
+IPC. Prefer Actions artifacts for local desktop testing if remote display adds
+more setup than review value. Neither a Codespace nor a successful package build
+replaces the headless tests.
 
 ### P1-02 — Monaco bridge compatibility checkpoint
 
@@ -119,6 +139,12 @@ API exposes model markers for diagnostics. Tauri 2's IPC channels support
 ordered Rust-to-frontend message delivery. These APIs allow a small
 project-owned adapter between the Rust LSP process and Monaco without exposing
 a local network port.
+
+The PoC now prototypes that adapter for one sample buffer: it negotiates server
+capabilities, synchronizes edits, maps published diagnostics to Monaco markers,
+and registers hover only when advertised. It remains in progress until tested
+with the pinned server and native Tauri runtime; cancellation, disposal, and
+document-version handling also require end-to-end verification.
 
 Do not add `monaco-languageclient` `10.7.0`: the upstream compatibility table
 pairs that release with Monaco `0.55.1`. The same table lists `11.0.2` with

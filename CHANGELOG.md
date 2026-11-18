@@ -24,6 +24,48 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-18 — Prototype Monaco LSP adapter and validation path
+
+### Tasks/status
+
+- **P1-01 in progress:** connected the sample UI to the supervised transport;
+  real-server and native Tauri validation remain outstanding.
+- **P1-02 in progress:** implemented a project-owned Monaco adapter prototype
+  for one in-memory sample document, diagnostics, and conditional hover.
+- **P1 validation strategy recorded:** headless CI for repeatable checks, with
+  optional native desktop or remote-desktop Codespace review for human testing.
+
+### Work and decisions
+
+- Added bounded JSON-RPC frame encode/decode and client request correlation,
+  notification dispatch, timeout/cancellation, and cleanup in
+  `poc/src/lspProtocol.ts`; added protocol tests.
+- Added LSP initialize, didOpen/didChange/didClose, diagnostic-to-Monaco marker
+  mapping, and hover-provider registration when advertised in
+  `poc/src/lspEditor.ts`. The sample UI now offers connect/stop/retry controls
+  and surfaces startup errors; it continues to use one unsaved sample buffer.
+- Clarified the test/reviewer split in the Phase 1 plan: Actions should cover
+  headless tests/build and pinned-artifact integrity; human UI review may use a
+  native package or Codespace with remote desktop. A forwarded Vite page alone
+  cannot validate Tauri IPC. No workflow or Codespace configuration is added
+  before the real-server/native integration is proven.
+
+### Validation
+
+- `npm test` passed all 11 tests, including the new protocol tests.
+- `npm run build` passed; the existing Monaco chunk-size warning remains.
+- `npm ci` restored lockfile dependencies and reported the five existing high
+  npm findings. No dependency was added for this adapter.
+- Integrated Tauri tests/build and real-server runtime were not run: Linux
+  GIO/GLib development metadata is missing, and the pinned JAR is not staged.
+
+### Limitations and next steps
+
+- Complete P1-01 native/server lifecycle validation, then verify P1-02 behavior
+  against the pinned server, including restart/recovery and end-to-end hover.
+- Keep P2 paused. Add CI and optional reviewer delivery configuration after the
+  integration target and its native prerequisites are confirmed.
+
 ## 2026-11-18 — Defer PoC risks and begin Phase 1
 
 ### Tasks/status
