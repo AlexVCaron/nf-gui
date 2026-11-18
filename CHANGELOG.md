@@ -56,8 +56,17 @@ contents in reports.
   license metadata.
 - `cargo metadata --locked` resolved 494 packages; all have declared license
   expressions, including the now-declared `nf-gui-poc` MIT license.
-- Application tests/build and dependency advisory checks are pending after the
-  metadata change. Secret scanning and documentation-link checks are pending.
+- `npm test` passed all seven tests; `npm run build` passed with the existing
+  Monaco chunk-size warning. `npm audit --omit=dev --audit-level=moderate`
+  reported zero vulnerabilities; the full npm audit still reports five high
+  findings through the Vite/picomatch build chain.
+- `npm run audit:dependencies` confirmed it runs both scanners, but the Cargo
+  leg could not execute because `cargo-audit` is not installed in this
+  environment. The last completed Cargo audit on this unchanged lockfile
+  reported five RustSec warnings. `cargo fmt --check` and internal Markdown
+  path checks passed; `git diff --check` passed.
+- Secret scanning found no secrets. No CodeQL run was requested for this
+  documentation and package-metadata-only change.
 
 ### Limitations and next steps
 
