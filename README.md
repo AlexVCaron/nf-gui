@@ -18,3 +18,5 @@ rationale and research questions that still require upstream verification.
 Report task advancement in both [PLAN_TRACKING.md](PLAN_TRACKING.md) and
 [CHANGELOG.md](CHANGELOG.md), following the
 [required reporting workflow](PLAN.md#required-progress-reporting).
+Agents must include a concise handoff summary in chat and follow
+[`AGENTS.md`](AGENTS.md); do not create a separate summary file unless asked.

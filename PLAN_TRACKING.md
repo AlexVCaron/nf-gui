@@ -36,6 +36,9 @@ as the work. Follow the [main plan reporting requirements](PLAN.md#required-prog
   research caveats, and phases in the main plan and eight phase documents.
 - [x] DOC-02 — Add this tracker, the initial changelog, and required reporting
   links at the main and phase entry points.
+- [x] DOC-03 — Add a repository agent harness requiring concise chat summaries
+  with validation results, blockers, and next actions; keep summaries out of
+  separate files unless explicitly requested.
 
 ## Phase 0 — Upstream audit
 
@@ -210,6 +213,7 @@ Tasks without a row and with an unchecked box are not started.
 |---|---|---|---|
 | DOC-01 | Complete | [Main plan](PLAN.md), linked phase documents, and commit `a25b059`; original research limitation retained. | Begin P0-01; upstream claims remain unverified. |
 | DOC-02 | Complete | This checklist, [initial changelog and validation outcomes](CHANGELOG.md#2026-09-18--planning-foundation), and reporting references in all phases; secret/whitespace and duplicate-ID checks passed, links manually reviewed. | Automated review unavailable (model configuration); CodeQL skipped documentation-only changes. Use both reporting files for subsequent work. |
+| DOC-03 | Complete | Root [agent handoff requirements](AGENTS.md) require a concise final chat summary and explicitly prohibit a separate summary file unless requested; [PLAN.md](PLAN.md#required-progress-reporting) and [README.md](README.md) link the convention. | Agents must follow the repository harness; report summaries, actual validation, blockers, and next actions directly in chat. |
 | P0-01, P0-02 | Complete | [Phase 0 audit findings](docs/plan/phase-0-audit-findings.md#p0-01--nextflow-language-server) record selected `v26.04.4` source/test evidence, capability/protocol behavior, narrow incomplete-source coverage, entry-only cancellation checks, debounce/freshness limits, and error handling. Newer-main tests are distinguished from the selected artifact. Official editor lifecycle is pinned at `1a28fdb`; no child-process crash/restart-and-resync test was found. Source/test inspection only; upstream suites were not run. | Phase 1 must test supervisor restart, buffer resynchronization, diagnostics recovery, and cancellation behavior end to end. |
 | P0-03, P0-04 | Complete | [Phase 0 audit findings](docs/plan/phase-0-audit-findings.md#p0-03--nextflow-parsercompiler-semantics) document the pinned parse/analyze behavior, source-range/API limitations, opaque plugin placeholders, remote module side effects, and lack of effective configuration resolution. The P0-04 schema UX decision specifies provenance/dialect display, separates declared data from validation/effective values, and records the nf-schema/nf-core compatibility discrepancy. | Exact source-edit ranges/round trips are Phase 2/3 proofs; effective configuration resolution and any schema validation require separate, explicit support and authorization. |
 | P0-05 | Complete | [Phase 0 audit findings](docs/plan/phase-0-audit-findings.md#p0-05--desktopeditor-infrastructure) document Tauri permissions/CSP/resources/sidecars/channels, the editor compatibility candidates, transport limitations, and the accepted Tauri `2.9.2` PoC baseline. Its Windows/Android advisory and mandatory patched-version release gate are explicit. | Phase 1 must integrate and prove the `@tauri-apps/api` pairing, packaged WebView workers/CSP, and IPC-to-stdio transport; upgrade/re-audit before Windows/Android shipment/support. |

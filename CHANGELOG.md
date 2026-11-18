@@ -24,6 +24,39 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-18 — Require concise chat handoff summaries
+
+### Tasks/status
+
+- **DOC-03 complete:** added repository-level agent guidance requiring a
+  concise work summary in each final chat response.
+
+### Work and decisions
+
+- Added root [`AGENTS.md`](AGENTS.md) with handoff expectations for implementation
+  and research, including actual validation outcomes, blockers, and next actions.
+- Clarified that summaries belong in chat; a separate summary or handoff file is
+  created only when the user explicitly requests that artifact.
+- Linked the harness from the [README](README.md) and
+  [required progress reporting](PLAN.md#required-progress-reporting), and added
+  stable task ID DOC-03 to the plan and tracker.
+
+### Validation
+
+- Checked Markdown links in the changed documents and ran `git diff --check`.
+- No application code or runtime behavior changed; no build or application tests
+  apply.
+- Secret scanning passed with no secrets detected. CodeQL was not run because
+  the changes are documentation-only.
+
+### Limitations and next steps
+
+- The instruction harness establishes a repository convention for agents that
+  read `AGENTS.md`; it is not a technical mechanism that can enforce chat output
+  for systems that ignore repository guidance.
+- Continue P0 work under its existing blockers; no P0 status changed in this
+  documentation task.
+
 ## 2026-11-18 — Make dependency audits complete and actionable
 
 ### Tasks/status
