@@ -97,6 +97,33 @@ process-tree management, and do not resolve or verify a packaged server JAR.
 Until those integrations and lifecycle tests exist, the prototype remains
 non-functional as an LSP client.
 
+### P1-02 — Monaco bridge compatibility checkpoint
+
+The current frontend uses `monaco-editor` `0.57.0` directly, without VS Code
+services. Monaco's public `languages` API exposes providers for completion,
+hover, definitions, references, rename, and document symbols, and its editor
+API exposes model markers for diagnostics. Tauri 2's IPC channels support
+ordered Rust-to-frontend message delivery. These APIs allow a small
+project-owned adapter between the Rust LSP process and Monaco without exposing
+a local network port.
+
+Do not add `monaco-languageclient` `10.7.0`: the upstream compatibility table
+pairs that release with Monaco `0.55.1`. The same table lists `11.0.2` with
+Monaco `0.56.0` and labels `11.0.3` (the row aligned with Monaco `0.57.0`) as
+unreleased. Therefore no released exact match for the current editor is
+established by that table. The project-owned Monaco-provider adapter is the
+provisional smallest bridge candidate; keep P1-02 in progress until a prototype
+proves diagnostics and at least one request/response feature against the
+selected server, with protocol ordering, cancellation, disposal, and editor
+version synchronization tests. Reassess the library option if a compatible
+release is published and audited.
+
+Evidence:
+
+- [Monaco language API](https://microsoft.github.io/monaco-editor/typedoc/modules/editor_editor_api.languages.html)
+- [monaco-languageclient compatibility history](https://github.com/TypeFox/monaco-languageclient/blob/main/docs/versions-and-history.md)
+- [Tauri 2 JavaScript IPC channel API](https://v2.tauri.app/reference/javascript/api/namespacecore/)
+
 The user accepted the currently documented npm/RustSec findings for internal
 PoC/Phase 1 work only. This does not waive Phase 5 controls or imply a clean
 audit. Keep the npm dev server loopback-only, retain the Tauri Windows/Android

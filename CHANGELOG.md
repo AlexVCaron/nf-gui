@@ -36,6 +36,10 @@ contents in reports.
 - **P1-01 in progress:** selected Rust-supervised stdio LSP transport and added
   bounded framing and a child-process supervisor; Tauri bridge and LSP lifecycle
   integration are still outstanding.
+- **P1-02 in progress:** reviewed the Monaco bridge candidates. The provisional
+  direction is a small project-owned adapter using Monaco providers and Tauri
+  IPC channels; compatibility of the deferred `monaco-languageclient` package
+  with the pinned editor is not established by its published table.
 
 ### Work and decisions
 
@@ -57,6 +61,11 @@ contents in reports.
   directly with `-jar`, keeps framed stdout separate from bounded/drained
   stderr, and supports timed reads, exit polling, and termination. It is not
   connected to a Tauri command and does not resolve or verify the absent JAR.
+- For P1-02, recorded upstream version alignment: `monaco-languageclient`
+  `10.7.0` is paired with Monaco `0.55.1`, `11.0.2` with `0.56.0`, and `11.0.3`
+  aligned with the project's `0.57.0` is marked unreleased. No library was
+  installed; the provisional custom-adapter direction still needs an end-to-end
+  proof against the selected server.
 
 ### Validation
 
@@ -86,6 +95,9 @@ contents in reports.
   Tauri commands/channels; implement LSP initialize/shutdown, validated resource
   resolution, process-tree cleanup, crash/restart recovery, and integration
   tests. Do not expose shell or arbitrary executable paths to the frontend.
+- **P1-02:** prototype the project-owned Monaco provider adapter, or revisit the
+  library choice when a compatible released version is available; verify
+  diagnostics/request mapping and lifecycle/version behavior.
 - **Re-open P0-07/P0-EXIT** before release, wider distribution, material
   dependency changes, Windows/Android support, or enabling deferred artifacts.
 - Notify the user only if a dependency is confirmed closed/proprietary; current
