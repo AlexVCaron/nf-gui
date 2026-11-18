@@ -1,8 +1,10 @@
 import * as monaco from "monaco-editor/editor/editor.api.js";
 import { startLspTransport, type LspTransport } from "./lspTransport";
 import { LspRpcClient } from "./lspProtocol";
+import { normalizeCompletionResult, type LspCompletionItem } from "./lspCompletion";
 
 type ServerCapabilities = {
+  completionProvider?: { triggerCharacters?: string[] } | boolean;
   hoverProvider?: boolean | object;
   textDocumentSync?: number | { openClose?: boolean; change?: number };
 };
@@ -177,6 +179,50 @@ export async function connectLspEditor(
         })
       : undefined;
 
+    const completionCapability = capabilities.completionProvider;
+    const completionProvider = completionCapability
+      ? monaco.languages.registerCompletionItemProvider("nextflow", {
+          triggerCharacters:
+            typeof completionCapability === "object"
+              ? completionCapability.triggerCharacters
+              : undefined,
+          provideCompletionItems: async (_completionModel, position, context, token) => {
+            const controller = new AbortController();
+            const cancellation = token.onCancellationRequested(() => controller.abort());
+            try {
+              const result = await client?.request(
+                "textDocument/completion",
+                {
+                  textDocument: { uri },
+                  position: { line: position.lineNumber - 1, character: position.column - 1 },
+                  context: {
+                    triggerKind: context.triggerKind + 1,
+                    triggerCharacter: context.triggerCharacter,
+                  },
+                },
+                { signal: controller.signal },
+              );
+              const { items, incomplete } = normalizeCompletionResult(result);
+              const word = model.getWordUntilPosition(position);
+              const defaultRange = new monaco.Range(
+                position.lineNumber,
+                word.startColumn,
+                position.lineNumber,
+                word.endColumn,
+              );
+              return {
+                suggestions: items.map((item) => toMonacoCompletion(item, defaultRange)),
+                incomplete,
+              };
+            } catch {
+              return { suggestions: [] };
+            } finally {
+              cancellation.dispose();
+            }
+          },
+        })
+      : undefined;
+
     return {
       get isActive() {
         return !stopped && !stopping;
@@ -188,6 +234,7 @@ export async function connectLspEditor(
         changeSubscription = undefined;
         hoverProvider?.dispose();
         hoverProvider = undefined;
+        completionProvider?.dispose();
         removeDiagnosticListener();
         removeDiagnosticListener = () => undefined;
         removeDiagnostics();
@@ -254,4 +301,73 @@ function normalizeHoverContents(
     isTrusted: false,
     supportHtml: false,
   }));
+}
+
+function toMonacoCompletion(
+  item: LspCompletionItem,
+  defaultRange: monaco.Range,
+): monaco.languages.CompletionItem {
+  const label = typeof item.label === "string" ? item.label : item.label.label;
+  const completion: monaco.languages.CompletionItem = {
+    label: typeof item.label === "string" ? item.label : {
+      label,
+      detail: item.label.detail,
+      description: item.label.description,
+    },
+    kind: completionKind(item.kind),
+    insertText: item.textEdit?.newText ?? item.insertText ?? label,
+    range: item.textEdit ? toMonacoRange(item.textEdit.range) : defaultRange,
+    detail: item.detail,
+    documentation: item.documentation
+      ? typeof item.documentation === "string"
+        ? { value: item.documentation, isTrusted: false, supportHtml: false }
+        : { value: item.documentation.value, isTrusted: false, supportHtml: false }
+      : undefined,
+    sortText: item.sortText,
+    filterText: item.filterText,
+    preselect: item.preselect,
+    commitCharacters: item.commitCharacters,
+    tags: item.deprecated || item.tags?.includes(1)
+      ? [monaco.languages.CompletionItemTag.Deprecated]
+      : undefined,
+    insertTextRules: item.insertTextFormat === 2
+      ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet
+      : undefined,
+    additionalTextEdits: item.additionalTextEdits?.map((edit) => ({
+      range: toMonacoRange(edit.range),
+      text: edit.newText,
+    })),
+  };
+  return completion;
+}
+
+function completionKind(kind?: number): monaco.languages.CompletionItemKind {
+  const kinds: Record<number, monaco.languages.CompletionItemKind> = {
+    1: monaco.languages.CompletionItemKind.Text,
+    2: monaco.languages.CompletionItemKind.Method,
+    3: monaco.languages.CompletionItemKind.Function,
+    4: monaco.languages.CompletionItemKind.Constructor,
+    5: monaco.languages.CompletionItemKind.Field,
+    6: monaco.languages.CompletionItemKind.Variable,
+    7: monaco.languages.CompletionItemKind.Class,
+    8: monaco.languages.CompletionItemKind.Interface,
+    9: monaco.languages.CompletionItemKind.Module,
+    10: monaco.languages.CompletionItemKind.Property,
+    11: monaco.languages.CompletionItemKind.Unit,
+    12: monaco.languages.CompletionItemKind.Value,
+    13: monaco.languages.CompletionItemKind.Enum,
+    14: monaco.languages.CompletionItemKind.Keyword,
+    15: monaco.languages.CompletionItemKind.Snippet,
+    16: monaco.languages.CompletionItemKind.Color,
+    17: monaco.languages.CompletionItemKind.File,
+    18: monaco.languages.CompletionItemKind.Reference,
+    19: monaco.languages.CompletionItemKind.Folder,
+    20: monaco.languages.CompletionItemKind.EnumMember,
+    21: monaco.languages.CompletionItemKind.Constant,
+    22: monaco.languages.CompletionItemKind.Struct,
+    23: monaco.languages.CompletionItemKind.Event,
+    24: monaco.languages.CompletionItemKind.Operator,
+    25: monaco.languages.CompletionItemKind.TypeParameter,
+  };
+  return (kind && kinds[kind]) || monaco.languages.CompletionItemKind.Text;
 }
