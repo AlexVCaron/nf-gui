@@ -147,8 +147,10 @@ the npm development graph has five high findings and the Rust lockfile has five
 denied RustSec warnings (including one optional-only entry). The Vite downgrade
 suggested by npm is affected by separate Vite advisories, while the patched Vite
 6.4.4 line still depends on vulnerable picomatch. Tauri's known GHSA is absent
-from both scanner outputs, the PoC crate has no declared license, and the
-nf-schema blob could not be downloaded for local verification. The nf-schema
+from both scanner outputs, and the nf-schema blob could not be downloaded for
+local verification. The project and current dependency graph are declared under
+open-source licenses, which are accepted subject to their notice and
+source-availability obligations. The nf-schema
 README/build/registry minimum-version discrepancy remains recorded with a
 conservative `26.04.0+` use boundary. Do not mark the phase exit complete until
 these findings are dispositioned and the matrix is re-reviewed against the

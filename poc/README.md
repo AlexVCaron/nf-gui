@@ -2,6 +2,9 @@
 
 This is a small, runnable Tauri/React prototype and a repeatable checkpoint for
 dependency and runtime-artifact reviews. It is not the nf-gui application.
+Project code is licensed under the repository [MIT License](../LICENSE).
+Dependencies retain their own open-source licenses and notices; the project
+license does not replace those obligations.
 
 ## What it demonstrates
 
@@ -51,9 +54,12 @@ cargo metadata --format-version 1 --locked > /tmp/nf-gui-poc.cargo-metadata.json
 ```
 
 `npm run audit:dependencies` runs both checks even if the first one fails and
-returns a failure if either check fails. Review the license, source, and
-integrity fields in the npm SBOM and Cargo metadata; missing
-license/provenance information is an unresolved item, not an implicit approval.
+returns a failure if either check fails. Review the license, source, and integrity fields in the npm SBOM and Cargo
+metadata. The current lockfiles declare open-source licenses for all 54 npm
+components and 493 third-party Cargo packages. Accept open-source licenses,
+including copyleft, and comply with their terms; escalate only a confirmed
+closed/proprietary dependency license. Missing or ambiguous metadata requires
+investigation rather than an assumption that the dependency is closed.
 Keep generated inventories outside the repository unless a reviewed, dated
 snapshot is intentionally required.
 
@@ -86,9 +92,9 @@ until Tauri is upgraded to a patched version (at least 2.11.1) and the full
 dependency graph is re-audited. A passing scanner result cannot override a
 known advisory.
 
-The prototype crate does not declare a project license. Do not infer one from
-dependency licenses; a maintainer decision is required before public
-redistribution, but does not prevent internal PoC iteration.
+The prototype's own code is MIT-licensed. This does not relicense its
+dependencies; preserve each dependency's attribution and license notices and
+meet any applicable source-availability obligations.
 
 ### Verify optional runtime artifacts
 

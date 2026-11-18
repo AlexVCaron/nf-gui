@@ -12,3 +12,8 @@
 - Be clear about whether work is complete, in progress, or blocked. Never
   describe a prototype as production-ready or imply checks passed when they did
   not.
+- Accept open-source dependency licenses, including copyleft licenses, and
+  comply with their attribution, notice, and source-availability terms. Adjust
+  this project's license where needed to meet those terms; do not ask for
+  approval for an open license. Notify the user only when a dependency is
+  confirmed to require a closed or proprietary license.

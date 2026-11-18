@@ -24,6 +24,52 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-18 — Accept open-source dependency licenses
+
+### Tasks/status
+
+- **P0-07 advanced; licensing is no longer a blocker.** The user authorized
+  accepting open dependency licenses and adjusting local license terms; report
+  only if a dependency is confirmed to require a closed/proprietary license.
+- **P0-07 and P0-EXIT remain blocked** by dependency advisories, nf-schema
+  artifact verification, and provenance work.
+
+### Work and decisions
+
+- Added root [MIT license](LICENSE) and declared `MIT` in the PoC npm and Cargo
+  package metadata. The license covers project-authored code; dependencies
+  retain their respective licenses and notices.
+- Reviewed the current npm SBOM (54 components; all have declared licenses) and
+  Cargo metadata (494 packages, including the prototype). The current
+  dependency license expressions are open-source (MIT, Apache-2.0, ISC, BSD,
+  MPL-2.0, Unicode-3.0, and other open terms); no closed/proprietary license
+  was found. Copyleft terms are accepted, with required notices and
+  source-availability obligations to be followed.
+- Added the open-license acceptance/escalation policy to [AGENTS.md](AGENTS.md)
+  and removed the missing-project-license blocker from the audit findings,
+  capability matrix, and tracker.
+
+### Validation
+
+- `npm ci` installed exactly the locked graph; npm reported the existing five
+  high-severity advisories. `npm sbom` listed 54 components with no missing
+  license metadata.
+- `cargo metadata --locked` resolved 494 packages; all have declared license
+  expressions, including the now-declared `nf-gui-poc` MIT license.
+- Application tests/build and dependency advisory checks are pending after the
+  metadata change. Secret scanning and documentation-link checks are pending.
+
+### Limitations and next steps
+
+- The project license change applies to project-authored code only and does not
+  replace dependency terms. Preserve upstream notices and comply with each
+  dependency's source-availability obligations.
+- **P0-07:** continue reviewing the npm/RustSec advisories, nf-schema digest and
+  provenance, and deferred bridge candidates. Notify the user only if a
+  dependency is confirmed to require a closed/proprietary license.
+- **P0-EXIT:** remains open until the remaining security/provenance evidence is
+  dispositioned and the phase matrix is reviewed.
+
 ## 2026-11-18 — Require concise chat handoff summaries
 
 ### Tasks/status
