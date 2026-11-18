@@ -34,8 +34,9 @@ contents in reports.
   and edit paths are mapped, and remaining dependency/artifact risks are
   explicitly accepted or deferred with re-open triggers.
 - **P1-01 in progress:** selected Rust-supervised stdio LSP transport and added
-  bounded framing and a child-process supervisor; Tauri bridge and LSP lifecycle
-  integration are still outstanding.
+  bounded framing, child-process supervision, and Tauri IPC start/send/stop
+  commands; LSP initialize/shutdown and the real packaged-server exercise are
+  still outstanding.
 - **P1-02 in progress:** reviewed the Monaco bridge candidates. The provisional
   direction is a small project-owned adapter using Monaco providers and Tauri
   IPC channels; compatibility of the deferred `monaco-languageclient` package
@@ -59,8 +60,20 @@ contents in reports.
   header/body limits and no child process launch or frontend-exposed executable
   path. Continued with a Rust child-process supervisor that invokes Java
   directly with `-jar`, keeps framed stdout separate from bounded/drained
-  stderr, and supports timed reads, exit polling, and termination. It is not
-  connected to a Tauri command and does not resolve or verify the absent JAR.
+  stderr, and supports timed reads, exit polling, and termination.
+- Added session-scoped Tauri start/send/stop commands and raw protocol/stderr
+  channels, with child termination when the app window closes. The executable
+  name is fixed to `java`; frontend input cannot choose a path or workspace.
+  Start attempts are serialized before artifact verification/process creation,
+  avoiding duplicate child launches.
+- Added pinned `@tauri-apps/api` `2.9.0`; its advisory database check reported
+  no findings. The API-to-Rust pairing awaits native compilation and runtime
+  exercise.
+  Startup resolves only the bundled language-server resource, rejects
+  non-regular or oversized files, and checks its pinned SHA-256 before launch.
+  Added a typed frontend IPC helper, but the static editor intentionally does
+  not call it. Bundle resources map `poc/artifacts/` to the app's `artifacts/`
+  directory; the JAR remains omitted from source control and is not downloaded.
 - For P1-02, recorded upstream version alignment: `monaco-languageclient`
   `10.7.0` is paired with Monaco `0.55.1`, `11.0.2` with `0.56.0`, and `11.0.3`
   aligned with the project's `0.57.0` is marked unreleased. No library was
@@ -78,6 +91,11 @@ contents in reports.
   stderr, and termination. `cargo fmt --all -- --check` passed. Integrated
   Cargo tests remain blocked because Linux lacks `gio-2.0`/`glib-2.0`
   development metadata.
+- A temporary isolated Cargo test harness ran the five SHA-256/resource
+  verifier tests successfully (known digest calculation, incorrect digest,
+  oversized-file and symlink rejection, and pinned limits). Tauri command
+  integration has not compiled in this environment because the integrated test
+  and Tauri build hit the missing native GTK/GIO/GLib dependencies.
 - After restoring `node_modules` with `npm ci`, all seven `npm test` cases and
   `npm run build` passed. The build retains the existing Monaco chunk-size
   warning; `npm ci` reports the five previously recorded high npm findings.
@@ -86,15 +104,16 @@ contents in reports.
   could not execute because `cargo-audit` was absent. nf-schema artifact
   verification remains unavailable. Registry attestations remain unverified.
 - Internal Markdown links/anchors, `git diff --check`, and secret scanning
-  passed. The integrated Cargo test/native build remain blocked by missing Linux
-  GTK/WebKit prerequisites.
+  passed. The Tauri resource mapping validates against the installed CLI schema;
+  integrated Cargo tests and the Tauri build remain blocked by missing Linux
+  GTK/GIO/GLib/WebKit prerequisites.
 
 ### Limitations and next steps
 
-- **P1-01:** connect the supervisor to the verified packaged JAR through narrow
-  Tauri commands/channels; implement LSP initialize/shutdown, validated resource
-  resolution, process-tree cleanup, crash/restart recovery, and integration
-  tests. Do not expose shell or arbitrary executable paths to the frontend.
+- **P1-01:** stage and exercise the verified packaged JAR; implement LSP
+  initialize/shutdown, process-tree cleanup, crash/restart recovery, and
+  integration tests. Do not expose shell or arbitrary executable paths to the
+  frontend.
 - **P1-02:** prototype the project-owned Monaco provider adapter, or revisit the
   library choice when a compatible released version is available; verify
   diagnostics/request mapping and lifecycle/version behavior.

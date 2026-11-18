@@ -91,11 +91,24 @@ permission as a shortcut.
 The initial Rust components now provide bounded `Content-Length` framing and a
 child-process supervisor that invokes Java directly with `-jar`, pipes protocol
 stdin/stdout, drains stderr into a separately bounded diagnostic queue, and
-supports timed receive, exit polling, and termination. They are not yet wired to
-a Tauri command/channel, do not implement LSP initialize/shutdown sequencing or
-process-tree management, and do not resolve or verify a packaged server JAR.
-Until those integrations and lifecycle tests exist, the prototype remains
-non-functional as an LSP client.
+supports timed receive, exit polling, and termination. Narrow Tauri commands
+start, send, and stop one session; channels stream raw protocol responses and
+separate diagnostic bytes, and closing the window terminates the child. Startup
+resolves only the bundled `artifacts/language-server-all.jar`, verifies its
+pinned SHA-256 and regular-file status, then launches fixed `java -jar` with a
+cleared environment except for `PATH`. No executable or JAR path comes from the
+frontend.
+
+The typed client uses the pinned `@tauri-apps/api` `2.9.0` package; the advisory
+database reported no findings for this package/version. Its API-to-Rust pairing
+is implemented but awaits native compilation and an end-to-end desktop run.
+
+The JAR is intentionally not committed or downloaded automatically. The local
+experiment instructions in [the PoC README](../../poc/README.md) show how to
+stage the already-pinned release for packaging. Until the artifact is staged and
+the commands are exercised against the real server, LSP initialize/shutdown
+sequencing, workspace lifecycle, process-tree management, restart recovery, and
+the frontend Monaco adapter remain unproven; the UI still does not start an LSP.
 
 ### P1-02 — Monaco bridge compatibility checkpoint
 

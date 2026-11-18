@@ -17,6 +17,7 @@
     "audit:tree": "npm ls --all && cd src-tauri && cargo tree --locked -e normal,build,dev"
   },
   "dependencies": {
+    "@tauri-apps/api": "2.9.0",
     "@xyflow/react": "12.11.6",
     "monaco-editor": "0.57.0",
     "react": "19.1.0",

@@ -1,5 +1,4 @@
 use crate::lsp_framing::{read_message, write_message};
-use std::ffi::OsStr;
 use std::io::{self, BufReader, Read};
 use std::path::Path;
 use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
@@ -19,9 +18,14 @@ pub struct LspProcess {
 }
 
 impl LspProcess {
-    pub fn launch_server(java_executable: &OsStr, server_jar: &Path) -> io::Result<Self> {
-        let mut command = Command::new(java_executable);
+    pub fn launch_server(server_jar: &Path) -> io::Result<Self> {
+        let mut command = Command::new("java");
         command.arg("-jar").arg(server_jar);
+        command.current_dir(server_jar.parent().unwrap_or_else(|| Path::new(".")));
+        command.env_clear();
+        if let Some(path) = std::env::var_os("PATH") {
+            command.env("PATH", path);
+        }
         Self::spawn(&mut command)
     }
 

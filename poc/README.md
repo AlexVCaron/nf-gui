@@ -15,12 +15,29 @@ license does not replace those obligations.
   and nf-schema plugin blob.
 
 The editor and graph are independent examples: changing the editor does not
-change the graph. The Rust crate now contains bounded LSP framing and a child
-process supervisor, but neither is wired to a Tauri command or configured to
-launch the language-server artifact. The prototype still has no language-server
-bridge, file access, pipeline execution, plugin loading, downloads, Tauri
-commands, or external navigation. Do not use it to open or analyze an untrusted
-workflow.
+change the graph. The Rust crate now contains bounded LSP framing, a child
+process supervisor, and narrow Tauri IPC commands, but the UI does not start or
+use them. The commands only launch fixed `java -jar` with the packaged
+`artifacts/language-server-all.jar` after checking its pinned SHA-256. The JAR
+is not committed; without it, language-server startup returns an error. From
+the `poc/` directory, download the selected release into `artifacts/` and verify
+it before building:
+
+```sh
+curl -fL https://github.com/nextflow-io/language-server/releases/download/v26.04.4/language-server-all.jar \
+  -o artifacts/language-server-all.jar
+echo 'e1c5da90c7f0565ba9e64ac3c5b58f1215e315d6bfe4414d62ff2d02749e8887  artifacts/language-server-all.jar' \
+  | sha256sum -c -
+```
+
+The bundle configuration includes files placed in `artifacts/`; the runtime
+repeats the digest check before launching. The prototype still has no workspace
+file access, pipeline execution, plugin loading, automatic downloads, active
+editor bridge, or external navigation. Do not use it to open or analyze an
+untrusted workflow.
+
+The selected server requires Java 17 or newer. After staging and verifying the
+JAR, package the desktop app from `poc/` with `npm run tauri -- build`.
 
 ## Run
 
