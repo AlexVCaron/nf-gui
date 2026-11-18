@@ -8,9 +8,12 @@ import {
 } from "@xyflow/react";
 import * as monaco from "monaco-editor/editor/editor.api.js";
 import EditorWorker from "monaco-editor/editor/editor.worker.js?worker";
+import { connectLspEditor, type LspEditorSession } from "./lspEditor";
 import "monaco-editor/min/vs/editor/editor.main.css";
 import "@xyflow/react/dist/style.css";
 import "./App.css";
+
+monaco.languages.register({ id: "nextflow", extensions: [".nf"], aliases: ["Nextflow"] });
 
 (
   globalThis as typeof globalThis & {
@@ -80,14 +83,25 @@ function blockExternalNavigation(event: MouseEvent<HTMLDivElement>) {
 function App() {
   const editorElement = useRef<HTMLDivElement>(null);
   const editorInstance = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const lspSession = useRef<LspEditorSession | null>(null);
+  const editorGeneration = useRef(0);
   const [hasEdits, setHasEdits] = useState(false);
+  const [languageServerStatus, setLanguageServerStatus] = useState<
+    "disconnected" | "connecting" | "connected" | "error"
+  >("disconnected");
+  const [languageServerError, setLanguageServerError] = useState("");
 
   useEffect(() => {
     if (!editorElement.current) return;
+    editorGeneration.current += 1;
+    const model = monaco.editor.createModel(
+      sampleSource,
+      "nextflow",
+      monaco.Uri.parse("file:///nf-gui/main.nf"),
+    );
 
     const editor = monaco.editor.create(editorElement.current, {
-      value: sampleSource,
-      language: "plaintext",
+      model,
       theme: "vs-dark",
       automaticLayout: true,
       minimap: { enabled: false },
@@ -103,11 +117,47 @@ function App() {
     });
 
     return () => {
+      editorGeneration.current += 1;
+      void lspSession.current?.stop();
+      lspSession.current = null;
       changeSubscription.dispose();
       editor.dispose();
+      model.dispose();
       editorInstance.current = null;
     };
   }, []);
+
+  async function toggleLanguageServer() {
+    if (lspSession.current) {
+      const session = lspSession.current;
+      lspSession.current = null;
+      await session.stop();
+      setLanguageServerStatus("disconnected");
+      setLanguageServerError("");
+      return;
+    }
+
+    const model = editorInstance.current?.getModel();
+    if (!model) return;
+    const generation = editorGeneration.current;
+    setLanguageServerStatus("connecting");
+    setLanguageServerError("");
+    try {
+      const session = await connectLspEditor(model, () => undefined);
+      if (generation !== editorGeneration.current) {
+        await session.stop();
+        return;
+      }
+      lspSession.current = session;
+      setLanguageServerStatus("connected");
+    } catch (error) {
+      if (generation !== editorGeneration.current) return;
+      setLanguageServerStatus("error");
+      setLanguageServerError(
+        error instanceof Error ? error.message : "Could not start the language server",
+      );
+    }
+  }
 
   function resetSample() {
     editorInstance.current?.setValue(sampleSource);
@@ -129,9 +179,26 @@ function App() {
           Untitled workflow
           {hasEdits && <span className="dirty-indicator">Unsaved prototype edits</span>}
         </div>
-        <button className="reset-button" type="button" onClick={resetSample}>
-          Reset sample
-        </button>
+        <div className="topbar-actions">
+         <button
+           className="language-server-button"
+           type="button"
+           onClick={() => void toggleLanguageServer()}
+           disabled={languageServerStatus === "connecting"}
+           title={languageServerError || undefined}
+         >
+           {languageServerStatus === "connecting"
+             ? "Connecting…"
+             : languageServerStatus === "connected"
+               ? "Stop language server"
+               : languageServerStatus === "error"
+                 ? "Retry language server"
+                 : "Connect language server"}
+         </button>
+         <button className="reset-button" type="button" onClick={resetSample}>
+           Reset sample
+         </button>
+        </div>
       </header>
 
       <div className="workspace">
@@ -146,11 +213,19 @@ function App() {
         <section className="editor-panel" aria-label="Workflow source">
           <div className="panel-heading">
             <div className="tab active"><span className="file-icon">N</span> main.nf</div>
-            <span className="panel-meta">Plain text · not connected to a language server</span>
+            <span className="panel-meta" aria-live="polite">
+              {languageServerError || (languageServerStatus === "connected"
+                ? "Nextflow language server connected"
+                : "Sample buffer · language server disconnected")}
+            </span>
           </div>
           <div className="editor-host" ref={editorElement} />
           <div className="statusbar">
-            <span>Prototype buffer · changes are not saved</span>
+            <span>
+              {languageServerStatus === "connected"
+                ? "Unsaved sample buffer · diagnostics and hover enabled"
+                : "Prototype buffer · changes are not saved"}
+            </span>
             <span>UTF-8&nbsp;&nbsp; LF</span>
           </div>
         </section>
@@ -185,7 +260,7 @@ function App() {
 
       <footer className="safety-notice">
         <span aria-hidden="true">ⓘ</span>
-        Prototype only: no files, commands, language server, plugins, or workflows are accessed or run.
+        Sample workspace only: no project files are opened and no plugins or workflows are run.
       </footer>
     </main>
   );
