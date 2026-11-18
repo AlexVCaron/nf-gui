@@ -25,6 +25,7 @@ type LspHover = {
 };
 
 export interface LspEditorSession {
+  readonly isActive: boolean;
   stop(): Promise<void>;
 }
 
@@ -115,6 +116,7 @@ export async function connectLspEditor(
         text: model.getValue(),
       },
     });
+    if (stopped) throw new Error("Language server exited during startup");
 
     const changeKind = typeof capabilities.textDocumentSync === "number"
       ? capabilities.textDocumentSync
@@ -176,6 +178,9 @@ export async function connectLspEditor(
       : undefined;
 
     return {
+      get isActive() {
+        return !stopped && !stopping;
+      },
       stop: async () => {
         if (stopped || stopping) return;
         stopping = true;

@@ -110,6 +110,9 @@ tests. Outbound JSON-RPC frames are serialized so edits reach the server in
 document-version order. An explicit Tauri exit channel now tears down editor
 providers and markers when the child stops unexpectedly and lets the UI offer
 a retry.
+Startup checks for a process exit after both transport startup and document open,
+and the UI confirms the returned session is still active before marking it
+connected.
 
 The JAR is intentionally not committed or downloaded automatically. The local
 experiment instructions in [the PoC README](../../poc/README.md) show how to

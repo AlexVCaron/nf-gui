@@ -155,7 +155,7 @@ function App() {
           setLanguageServerError(`Language server stopped: ${reason}`);
         },
       );
-      if (generation !== editorGeneration.current) {
+      if (generation !== editorGeneration.current || !session.isActive) {
         await session.stop();
         return;
       }

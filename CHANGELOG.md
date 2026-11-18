@@ -43,11 +43,14 @@ contents in reports.
   `on_exit` channel. The worker terminates the child and removes the active
   session before notifying the client, preventing an immediate retry from
   racing the dead process.
+- A follow-up review found a startup race where exit during `didOpen` could
+  still mark a session connected. Added post-open and UI session-activity
+  checks so the error/retry state is not overwritten.
 
 ### Validation
 
 - `npm test` passed all 12 tests; `npm run build` passed with the existing
-  Monaco chunk-size warning.
+  Monaco chunk-size warning, including after the startup-race fix.
 - `cargo fmt --all -- --check` passed. `cargo test --locked` could not compile
   the integrated crate because `glib-2.0`, `gobject-2.0`, and `gio-2.0` pkg-config
   metadata is missing.
