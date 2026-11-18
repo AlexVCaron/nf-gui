@@ -139,19 +139,15 @@ the packaged Monaco workers/CSP and IPC transport; Phases 2/3 must prove exact
 source-edit ranges and round trips. These remain explicit limitations, not
 upstream guarantees or completed implementation.
 
-**P0-07 and P0-EXIT remain open.** Tauri `2.9.2` is accepted for the PoC only,
-with the Windows/Android upgrade gate retained. The language-server JAR and
-nf-schema plugin blob digests are recorded. The PoC now has npm and Cargo
-manifests/lockfiles, artifact verifier, and combined npm/Rust audit runner, but
-the npm development graph has five high findings and the Rust lockfile has five
-denied RustSec warnings (including one optional-only entry). The Vite downgrade
-suggested by npm is affected by separate Vite advisories, while the patched Vite
-6.4.4 line still depends on vulnerable picomatch. Tauri's known GHSA is absent
-from both scanner outputs, and the nf-schema blob could not be downloaded for
-local verification. The project and current dependency graph are declared under
-open-source licenses, which are accepted subject to their notice and
-source-availability obligations. The nf-schema
-README/build/registry minimum-version discrepancy remains recorded with a
-conservative `26.04.0+` use boundary. Do not mark the phase exit complete until
-these findings are dispositioned and the matrix is re-reviewed against the
-initial feature set.
+**P0-07 and P0-EXIT are complete for the scoped, non-shipping prototype by
+explicit risk disposition, not because all scanners are clean.** The npm
+development graph has five high findings, and the Rust lockfile has five
+RustSec warnings. The user approved deferring these for local PoC/Phase 1 work.
+Tauri `2.9.2` remains PoC-only; do not ship or claim Windows/Android support
+until upgrading to at least `2.11.1` and re-auditing. The unused nf-schema blob
+and Monaco LSP bridge are deferred candidates and must be verified/reviewed
+before adding them. See the [accepted and deferred risk register](phase-0-audit-findings.md#accepted-and-deferred-risks)
+for exact findings, constraints, and upgrade triggers. Registry attestations
+remain unverified. Keep required open-source license notices/source obligations.
+Re-open P0-07/P0-EXIT before any release, broader distribution, material
+dependency change, or use of a deferred artifact.

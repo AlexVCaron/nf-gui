@@ -78,3 +78,22 @@ The text editor must remain usable when semantic analysis fails.
 Apply the workspace trust, process supervision, protocol limits, logging, and
 failure-recovery requirements from
 [phase 5](phase-5-compatibility-packaging.md) from the beginning.
+
+### Initial integration spike and deferred-risk boundary
+
+P1-01 is the first active implementation task. The selected shape is a
+Rust-supervised Nextflow language-server child process communicating over
+stdio, with narrowly scoped Tauri commands/channels to the frontend. The server
+uses standard LSP framing; do not introduce a frontend-accessible localhost
+server, shell invocation, arbitrary executable path, or general filesystem
+permission as a shortcut.
+
+The user accepted the currently documented npm/RustSec findings for internal
+PoC/Phase 1 work only. This does not waive Phase 5 controls or imply a clean
+audit. Keep the npm dev server loopback-only, retain the Tauri Windows/Android
+upgrade gate, and re-audit any changed dependency graph. Before a release or
+broader distribution, re-open P0-07 and disposition every risk in the
+[Phase 0 register](phase-0-audit-findings.md#accepted-and-deferred-risks).
+The nf-schema blob and Monaco language-client bridge remain deferred and must
+not be downloaded, enabled, or treated as selected dependencies without their
+documented provenance/advisory review.

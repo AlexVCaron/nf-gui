@@ -96,6 +96,23 @@ The prototype's own code is MIT-licensed. This does not relicense its
 dependencies; preserve each dependency's attribution and license notices and
 meet any applicable source-availability obligations.
 
+### Deferred security risks and upgrade gates
+
+The user has accepted the current npm and RustSec findings for local PoC/Phase 1
+work only. npm still reports five high findings in the Vite/picomatch build
+graph; RustSec reports five warnings in the locked Tauri graph. These are
+deferred, not fixed or scanner false positives. Keep the dev server bound to
+`127.0.0.1`; rerun audits after dependency changes and before distribution.
+The exact findings and RustSec package paths are recorded in the
+[Phase 0 risk register](../docs/plan/phase-0-audit-findings.md#accepted-and-deferred-risks).
+
+Tauri 2.9.2 remains a PoC-only choice. Do not ship or claim Windows/Android
+support until upgrading to at least 2.11.1 and re-auditing. The nf-schema blob
+was not verified and is not included or enabled; verify its digest/provenance
+and resolve the version boundary before use. The Monaco LSP bridge is also
+deferred pending compatibility and advisory review. None of these deferrals
+indicates that the dependency graph is suitable for a release.
+
 ### Verify optional runtime artifacts
 
 The artifact files are intentionally not committed. Download them only from the
@@ -123,8 +140,9 @@ recording the artifact as approved. Do not weaken or remove a digest to make a
 check pass.
 
 The pinned language-server JAR was downloaded to a temporary directory and
-matched its recorded SHA-256. The nf-schema registry host could not be resolved
-from the current environment, so full-manifest verification remains blocked.
+matched its recorded SHA-256. The nf-schema registry host could not be resolved;
+the plugin is intentionally deferred and is not approved for use until the
+manifest digest and provenance are verified.
 
 ## Updating the prototype for future blockers
 
@@ -144,6 +162,7 @@ from the current environment, so full-manifest verification remains blocked.
    the tracker and changelog together.
 
 The current lockfiles establish the first real JavaScript and Rust dependency
-graphs, but P0-07 and P0-EXIT remain open until the unresolved advisory,
-transitive license/provenance, runtime-artifact verification, and release-gate
-evidence are addressed.
+graphs. P0-07 and P0-EXIT are complete for this non-shipping scope by explicit
+risk deferral, not because the audits are clean. Re-open them before
+distribution, material dependency changes, platform support, or enabling
+deferred artifacts.

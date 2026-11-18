@@ -24,7 +24,13 @@ an unresolved semantic dependency.
 research and decisions are recorded in
 [phase-0-audit-findings.md](phase-0-audit-findings.md) and
 [phase-0-capability-matrix.md](phase-0-capability-matrix.md); P0-07 and the phase
-exit remain blocked on dependency provenance and the resolved application graph.
+exit are closed for the scoped prototype after the dependency risks and unused
+runtime candidates were explicitly deferred. These are not clean security
+results or release approvals; see the accepted-risk register in
+[phase-0-audit-findings.md](phase-0-audit-findings.md#accepted-and-deferred-risks).
+Registry attestations are also not independently verified. Re-audit and verify
+provenance before product use, broader distribution, or the platform gates
+listed there.
 
 ## Current audit snapshot
 

@@ -24,6 +24,68 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-18 — Defer PoC risks and begin Phase 1
+
+### Tasks/status
+
+- **P0-07 complete for the non-shipping PoC by explicit deferral:** the user
+  approved carrying the documented security risks so work can continue.
+- **P0-EXIT complete for the scoped architecture:** initial feature semantics
+  and edit paths are mapped, and remaining dependency/artifact risks are
+  explicitly accepted or deferred with re-open triggers.
+- **P1-01 in progress:** selected Rust-supervised stdio LSP transport and added
+  the initial framing codec; child-process and lifecycle integration is still
+  outstanding.
+
+### Work and decisions
+
+- Added an accepted/deferred risk register to the Phase 0 findings covering the
+  five npm highs, five RustSec warnings, Tauri 2.9.2 GHSA, unverified nf-schema
+  blob, and deferred Monaco LSP bridge.
+- Made the scope explicit: this is internal/local PoC and Phase 1 risk
+  acceptance, not a clean scan, false-positive finding, or release approval.
+  Preserved loopback-only Vite, Tauri >=2.11.1 before Windows/Android support,
+  and pre-release dependency/artifact re-audit gates.
+- Updated the capability matrix and P0 tracker to close the audit phase against
+  its documented evidence and explicit risk dispositions; no deferred
+  dependency is included, activated, or treated as verified.
+- Started P1-01 by recording the narrow transport direction: Rust-supervised
+  child process, stdio LSP framing, and restricted Tauri command/channel
+  communication. Added an initial Rust Content-Length framing codec with fixed
+  header/body limits and no child process launch or frontend-exposed executable
+  path.
+
+### Validation
+
+- Reviewed the Phase 0 exit criterion against the capability matrix and current
+  risk evidence; checked that unresolved items are represented as explicit
+  accepted/deferred work rather than marked fixed.
+- `rustc --edition=2024 -D warnings --test` compiled the standalone std-only
+  LSP framing module and all seven tests passed. `cargo fmt --check` passed.
+  Integrated `cargo test --locked --lib lsp_framing` was blocked because the
+  Linux system is missing `gio-2.0`/`glib-2.0` development metadata.
+- After restoring `node_modules` with `npm ci`, all seven `npm test` cases and
+  `npm run build` passed. The build retains the existing Monaco chunk-size
+  warning; `npm ci` reports the five previously recorded high npm findings.
+- Dependency scan status remains unchanged: five high npm findings, five
+  RustSec warnings in the last successful audit; the latest Rust audit runner
+  could not execute because `cargo-audit` was absent. nf-schema artifact
+  verification remains unavailable. Registry attestations remain unverified.
+- Internal Markdown links/anchors, `git diff --check`, and secret scanning
+  passed. The integrated Cargo test/native build remain blocked by missing Linux
+  GTK/WebKit prerequisites.
+
+### Limitations and next steps
+
+- **P1-01:** integrate the framing codec with a supervised stdio child process
+  and narrow Tauri command/channel path; prove protocol/log separation,
+  validated launch configuration, shutdown/crash handling, and recovery. Do not
+  expose shell or arbitrary executable paths to the frontend.
+- **Re-open P0-07/P0-EXIT** before release, wider distribution, material
+  dependency changes, Windows/Android support, or enabling deferred artifacts.
+- Notify the user only if a dependency is confirmed closed/proprietary; current
+  inventory contains open-source licenses and accepted notice/source terms.
+
 ## 2026-11-18 — Accept open-source dependency licenses
 
 ### Tasks/status

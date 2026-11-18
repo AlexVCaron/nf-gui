@@ -5,8 +5,9 @@
 A runnable, explicitly limited Tauri prototype is in [`poc/`](poc/README.md).
 It exercises the frontend/editor/canvas shell and establishes JavaScript and
 Rust lockfiles plus reusable artifact-integrity and dependency-audit checks.
-It is not a functional workflow editor; its remaining security and dependency
-blockers are recorded in the [P0-07 findings](docs/plan/phase-0-audit-findings.md#p0-07-candidate-dependency-and-supply-chain-snapshot).
+It is not a functional workflow editor; its accepted PoC-only security risks
+and future upgrade gates are recorded in the
+[P0-07 findings](docs/plan/phase-0-audit-findings.md#accepted-and-deferred-risks).
 Project code is licensed under the [MIT License](LICENSE); third-party
 components retain their own licenses and notices.
 
