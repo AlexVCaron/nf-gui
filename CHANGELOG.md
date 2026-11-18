@@ -49,6 +49,9 @@ contents in reports.
 - Rust formatting and whitespace checks passed. Native Tauri/server testing
   remains unavailable because the pinned JAR is not staged and this environment
   lacks Linux GIO/GLib development metadata.
+- Post-commit CodeQL reported zero JavaScript alerts but timed out before all
+  languages completed; this is not a clean all-language result, and the tool
+  advised against retrying.
 
 ### Limitations and next steps
 
