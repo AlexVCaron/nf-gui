@@ -107,6 +107,9 @@ contents in reports.
   passed. The Tauri resource mapping validates against the installed CLI schema;
   integrated Cargo tests and the Tauri build remain blocked by missing Linux
   GTK/GIO/GLib/WebKit prerequisites.
+- Post-commit CodeQL reported no JavaScript alerts, but timed out before all
+  languages completed. Treat this as a partial scan; the tool advised against
+  retrying because the same run will not complete successfully.
 
 ### Limitations and next steps
 
