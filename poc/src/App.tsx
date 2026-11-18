@@ -13,7 +13,9 @@ import "monaco-editor/min/vs/editor/editor.main.css";
 import "@xyflow/react/dist/style.css";
 import "./App.css";
 
-monaco.languages.register({ id: "nextflow", extensions: [".nf"], aliases: ["Nextflow"] });
+if (!monaco.languages.getLanguages().some(({ id }) => id === "nextflow")) {
+  monaco.languages.register({ id: "nextflow", extensions: [".nf"], aliases: ["Nextflow"] });
+}
 
 (
   globalThis as typeof globalThis & {

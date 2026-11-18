@@ -39,6 +39,7 @@ test("correlates responses and dispatches notifications", async () => {
   });
 
   const response = client.request("initialize", {});
+  await new Promise<void>((resolve) => setImmediate(resolve));
   assert.ok(sent);
   const request = decodeLspMessage(sent);
   client.receive(frame({ jsonrpc: "2.0", id: request.id, result: { capabilities: {} } }));
@@ -85,6 +86,7 @@ test("rejects pending requests on cancellation, timeout, and close", async () =>
   const cancelled = client.request("hover", {}, { signal: controller.signal });
   controller.abort();
   await assert.rejects(cancelled, /cancelled/);
+  await new Promise<void>((resolve) => setImmediate(resolve));
   assert.equal(decodeLspMessage(sent.at(-1)!).method, "$/cancelRequest");
 
   await assert.rejects(client.request("slow", {}), /timed out/);

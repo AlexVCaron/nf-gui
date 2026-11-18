@@ -86,16 +86,18 @@ pub fn lsp_start(
 
     let active = Arc::clone(&state.active);
     let worker_process = Arc::clone(&process);
-    let spawn_result = thread::Builder::new().name("lsp-channel".into()).spawn(move || {
-        stream_process(
-            worker_process,
-            active,
-            session_id,
-            on_message,
-            on_stderr,
-            on_exit,
-        )
-    });
+    let spawn_result = thread::Builder::new()
+        .name("lsp-channel".into())
+        .spawn(move || {
+            stream_process(
+                worker_process,
+                active,
+                session_id,
+                on_message,
+                on_stderr,
+                on_exit,
+            )
+        });
     if let Err(error) = spawn_result {
         if let Ok(mut active) = state.active.lock() {
             active.take_if(|session| session.id == session_id);
@@ -195,7 +197,9 @@ fn stream_process(
         }
     }
 
-    let _ = on_exit.send(exit_reason);
+    if let Ok(mut process) = process.lock() {
+        let _ = process.terminate();
+    }
     if let Ok(mut active) = active.lock()
         && active
             .as_ref()
@@ -203,4 +207,5 @@ fn stream_process(
     {
         active.take();
     }
+    let _ = on_exit.send(exit_reason);
 }

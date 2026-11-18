@@ -35,7 +35,7 @@ export async function connectLspEditor(
 ): Promise<LspEditorSession> {
   let client: LspRpcClient | undefined;
   let transport: LspTransport | undefined;
-  let removeDiagnosticListener = () => undefined;
+  let removeDiagnosticListener: () => void = () => {};
   let changeSubscription: monaco.IDisposable | undefined;
   let hoverProvider: monaco.IDisposable | undefined;
   let stopped = false;
