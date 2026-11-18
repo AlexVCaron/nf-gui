@@ -152,9 +152,10 @@ fn fail_spawn<T>(child: &mut Child, message: &str) -> io::Result<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::LspProcess;
+    use super::{LspProcess, drain_stderr};
     use std::io::ErrorKind;
     use std::process::Command;
+    use std::sync::mpsc;
     use std::time::Duration;
 
     #[cfg(unix)]
@@ -194,5 +195,13 @@ mod tests {
             .receive(Duration::from_millis(1))
             .expect_err("no child output should arrive before a message is sent");
         assert_eq!(error.kind(), ErrorKind::TimedOut);
+    }
+
+    #[test]
+    fn keeps_stderr_chunks_separate_from_protocol_messages() {
+        let (sender, receiver) = mpsc::sync_channel(1);
+        drain_stderr(&b"diagnostic output"[..], sender);
+
+        assert_eq!(receiver.recv().unwrap(), b"diagnostic output".to_vec());
     }
 }

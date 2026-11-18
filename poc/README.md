@@ -15,9 +15,12 @@ license does not replace those obligations.
   and nf-schema plugin blob.
 
 The editor and graph are independent examples: changing the editor does not
-change the graph. The prototype has no language-server bridge, file access,
-pipeline execution, plugin loading, downloads, Tauri commands, or external
-navigation. Do not use it to open or analyze an untrusted workflow.
+change the graph. The Rust crate now contains bounded LSP framing and a child
+process supervisor, but neither is wired to a Tauri command or configured to
+launch the language-server artifact. The prototype still has no language-server
+bridge, file access, pipeline execution, plugin loading, downloads, Tauri
+commands, or external navigation. Do not use it to open or analyze an untrusted
+workflow.
 
 ## Run
 

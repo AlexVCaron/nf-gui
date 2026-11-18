@@ -88,6 +88,15 @@ uses standard LSP framing; do not introduce a frontend-accessible localhost
 server, shell invocation, arbitrary executable path, or general filesystem
 permission as a shortcut.
 
+The initial Rust components now provide bounded `Content-Length` framing and a
+child-process supervisor that invokes Java directly with `-jar`, pipes protocol
+stdin/stdout, drains stderr into a separately bounded diagnostic queue, and
+supports timed receive, exit polling, and termination. They are not yet wired to
+a Tauri command/channel, do not implement LSP initialize/shutdown sequencing or
+process-tree management, and do not resolve or verify a packaged server JAR.
+Until those integrations and lifecycle tests exist, the prototype remains
+non-functional as an LSP client.
+
 The user accepted the currently documented npm/RustSec findings for internal
 PoC/Phase 1 work only. This does not waive Phase 5 controls or imply a clean
 audit. Keep the npm dev server loopback-only, retain the Tauri Windows/Android

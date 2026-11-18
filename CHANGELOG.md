@@ -53,17 +53,22 @@ contents in reports.
   child process, stdio LSP framing, and restricted Tauri command/channel
   communication. Added an initial Rust Content-Length framing codec with fixed
   header/body limits and no child process launch or frontend-exposed executable
-  path.
+  path. Continued with a Rust child-process supervisor that invokes Java
+  directly with `-jar`, keeps framed stdout separate from bounded/drained
+  stderr, and supports timed reads, exit polling, and termination. It is not
+  connected to a Tauri command and does not resolve or verify the absent JAR.
 
 ### Validation
 
 - Reviewed the Phase 0 exit criterion against the capability matrix and current
   risk evidence; checked that unresolved items are represented as explicit
   accepted/deferred work rather than marked fixed.
-- `rustc --edition=2024 -D warnings --test` compiled the standalone std-only
-  LSP framing module and all seven tests passed. `cargo fmt --check` passed.
-  Integrated `cargo test --locked --lib lsp_framing` was blocked because the
-  Linux system is missing `gio-2.0`/`glib-2.0` development metadata.
+- A strict standalone Rust harness compiled both std-only LSP modules with
+  `rustc --edition=2024 -D warnings --test`; all eleven framing/supervision
+  tests passed, including child echo, malformed output, timeout, separate
+  stderr, and termination. `cargo fmt --all -- --check` passed. Integrated
+  Cargo tests remain blocked because Linux lacks `gio-2.0`/`glib-2.0`
+  development metadata.
 - After restoring `node_modules` with `npm ci`, all seven `npm test` cases and
   `npm run build` passed. The build retains the existing Monaco chunk-size
   warning; `npm ci` reports the five previously recorded high npm findings.
@@ -77,10 +82,10 @@ contents in reports.
 
 ### Limitations and next steps
 
-- **P1-01:** integrate the framing codec with a supervised stdio child process
-  and narrow Tauri command/channel path; prove protocol/log separation,
-  validated launch configuration, shutdown/crash handling, and recovery. Do not
-  expose shell or arbitrary executable paths to the frontend.
+- **P1-01:** connect the supervisor to the verified packaged JAR through narrow
+  Tauri commands/channels; implement LSP initialize/shutdown, validated resource
+  resolution, process-tree cleanup, crash/restart recovery, and integration
+  tests. Do not expose shell or arbitrary executable paths to the frontend.
 - **Re-open P0-07/P0-EXIT** before release, wider distribution, material
   dependency changes, Windows/Android support, or enabling deferred artifacts.
 - Notify the user only if a dependency is confirmed closed/proprietary; current
