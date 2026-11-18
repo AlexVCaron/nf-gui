@@ -24,6 +24,43 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-18 — Harden LSP ordering and process-exit handling
+
+### Tasks/status
+
+- **P1-01 in progress:** added explicit backend process-exit delivery and
+  terminal process cleanup; native Tauri/server validation is still required.
+- **P1-02 in progress:** serialized outbound JSON-RPC frames so document
+  notifications cannot overtake one another; server exit now clears editor
+  providers/markers and presents a retryable UI state.
+
+### Work and decisions
+
+- Addressed both high-confidence findings from code review of the Monaco
+  integration: concurrent `didChange` IPC calls could arrive out of order, and
+  the UI ignored process termination, leaving a stale connected state.
+- Added a serialized send queue and regression test, plus a dedicated Tauri
+  `on_exit` channel. The worker terminates the child and removes the active
+  session before notifying the client, preventing an immediate retry from
+  racing the dead process.
+
+### Validation
+
+- `npm test` passed all 12 tests; `npm run build` passed with the existing
+  Monaco chunk-size warning.
+- `cargo fmt --all -- --check` passed. `cargo test --locked` could not compile
+  the integrated crate because `glib-2.0`, `gobject-2.0`, and `gio-2.0` pkg-config
+  metadata is missing.
+- CodeQL has not yet been rerun for these follow-up code changes; the previous
+  post-commit scan only completed JavaScript and timed out before other languages.
+
+### Limitations and next steps
+
+- Run the native Tauri build and lifecycle tests against the verified pinned
+  server artifact. The implementation remains a single-buffer prototype.
+- Continue headless CI/Codespace delivery planning as recorded below; keep P2
+  paused until P1 validation is complete.
+
 ## 2026-11-18 — Prototype Monaco LSP adapter and validation path
 
 ### Tasks/status

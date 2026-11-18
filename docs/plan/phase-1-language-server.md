@@ -105,7 +105,11 @@ is implemented. The PoC UI now has explicit connect/stop controls for one
 in-memory sample document. The provider prototype performs initialize/open,
 advertised text synchronization, diagnostic marker mapping, and hover requests
 when supported; it sends shutdown/exit on stop. Protocol framing, request
-correlation, cancellation, timeout, and closure have focused tests.
+correlation, cancellation, timeout, write ordering, and closure have focused
+tests. Outbound JSON-RPC frames are serialized so edits reach the server in
+document-version order. An explicit Tauri exit channel now tears down editor
+providers and markers when the child stops unexpectedly and lets the UI offer
+a retry.
 
 The JAR is intentionally not committed or downloaded automatically. The local
 experiment instructions in [the PoC README](../../poc/README.md) show how to
