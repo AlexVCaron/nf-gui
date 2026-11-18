@@ -34,8 +34,8 @@ contents in reports.
   and edit paths are mapped, and remaining dependency/artifact risks are
   explicitly accepted or deferred with re-open triggers.
 - **P1-01 in progress:** selected Rust-supervised stdio LSP transport and added
-  the initial framing codec; child-process and lifecycle integration is still
-  outstanding.
+  bounded framing and a child-process supervisor; Tauri bridge and LSP lifecycle
+  integration are still outstanding.
 
 ### Work and decisions
 

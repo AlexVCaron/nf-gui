@@ -176,7 +176,6 @@ mod tests {
     }
 
     #[cfg(unix)]
-    #[cfg(unix)]
     #[test]
     fn rejects_child_stdout_that_is_not_a_valid_frame() {
         let mut command = Command::new("printf");
@@ -187,6 +186,7 @@ mod tests {
         assert_eq!(error.kind(), ErrorKind::InvalidData);
     }
 
+    #[cfg(unix)]
     #[test]
     fn reports_receive_timeout() {
         let process = LspProcess::spawn(&mut Command::new("cat")).unwrap();
