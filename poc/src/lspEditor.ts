@@ -19,7 +19,8 @@ type LspDiagnostic = {
 };
 
 type LspHover = {
-  contents?: string | { kind: string; value: string } | Array<string | { kind: string; value: string }>;
+  contents?: string | { kind?: string; language?: string; value: string } |
+    Array<string | { kind?: string; language?: string; value: string }>;
   range?: LspDiagnostic["range"];
 };
 
@@ -30,20 +31,41 @@ export interface LspEditorSession {
 export async function connectLspEditor(
   model: monaco.editor.ITextModel,
   onStderr: (chunk: Uint8Array) => void,
+  onExit: (reason: string) => void,
 ): Promise<LspEditorSession> {
   let client: LspRpcClient | undefined;
   let transport: LspTransport | undefined;
+  let removeDiagnosticListener = () => undefined;
+  let changeSubscription: monaco.IDisposable | undefined;
+  let hoverProvider: monaco.IDisposable | undefined;
+  let stopped = false;
+  let stopping = false;
   const uri = model.uri.toString();
   const removeDiagnostics = () => monaco.editor.setModelMarkers(model, "nextflow-lsp", []);
+  const cleanup = () => {
+    if (stopped) return;
+    stopped = true;
+    changeSubscription?.dispose();
+    hoverProvider?.dispose();
+    removeDiagnosticListener();
+    removeDiagnostics();
+    client?.close();
+  };
 
   try {
     transport = await startLspTransport(
       (message) => client?.receive(message),
       onStderr,
+      (reason) => {
+        if (stopping) return;
+        cleanup();
+        onExit(reason);
+      },
     );
+    if (stopped) throw new Error("Language server exited during startup");
     client = new LspRpcClient(transport.send);
 
-    const removeDiagnosticListener = client.onNotification(
+    removeDiagnosticListener = client.onNotification(
       "textDocument/publishDiagnostics",
       (params) => {
         if (!isRecord(params) || params.uri !== uri || !Array.isArray(params.diagnostics)) return;
@@ -97,7 +119,7 @@ export async function connectLspEditor(
     const changeKind = typeof capabilities.textDocumentSync === "number"
       ? capabilities.textDocumentSync
       : capabilities.textDocumentSync?.change ?? 0;
-    const changeSubscription = model.onDidChangeContent((event) => {
+    changeSubscription = model.onDidChangeContent((event) => {
       if (changeKind !== 1 && changeKind !== 2) return;
       const replaceDocument = changeKind === 1 || event.changes.some((change) => !change.range);
       const contentChanges = replaceDocument
@@ -125,7 +147,7 @@ export async function connectLspEditor(
       }).catch(() => undefined);
     });
 
-    const hoverProvider = capabilities.hoverProvider
+    hoverProvider = capabilities.hoverProvider
       ? monaco.languages.registerHoverProvider("nextflow", {
           provideHover: async (_hoverModel, position, token) => {
             const controller = new AbortController();
@@ -153,14 +175,16 @@ export async function connectLspEditor(
         })
       : undefined;
 
-    let stopped = false;
     return {
       stop: async () => {
-        if (stopped) return;
-        stopped = true;
-        changeSubscription.dispose();
+        if (stopped || stopping) return;
+        stopping = true;
+        changeSubscription?.dispose();
+        changeSubscription = undefined;
         hoverProvider?.dispose();
+        hoverProvider = undefined;
         removeDiagnosticListener();
+        removeDiagnosticListener = () => undefined;
         removeDiagnostics();
         try {
           await client?.notify("textDocument/didClose", { textDocument: { uri } });
@@ -169,13 +193,13 @@ export async function connectLspEditor(
         } catch {
           await client?.notify("exit", null).catch(() => undefined);
         } finally {
-          client?.close();
+          cleanup();
           await transport?.stop().catch(() => undefined);
         }
       },
     };
   } catch (error) {
-    client?.close();
+    cleanup();
     await transport?.stop().catch(() => undefined);
     throw error;
   }

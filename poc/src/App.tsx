@@ -143,7 +143,16 @@ function App() {
     setLanguageServerStatus("connecting");
     setLanguageServerError("");
     try {
-      const session = await connectLspEditor(model, () => undefined);
+      const session = await connectLspEditor(
+        model,
+        () => undefined,
+        (reason) => {
+          if (generation !== editorGeneration.current) return;
+          lspSession.current = null;
+          setLanguageServerStatus("error");
+          setLanguageServerError(`Language server stopped: ${reason}`);
+        },
+      );
       if (generation !== editorGeneration.current) {
         await session.stop();
         return;

@@ -8,15 +8,19 @@ export interface LspTransport {
 export async function startLspTransport(
   onMessage: (message: Uint8Array) => void,
   onStderr: (chunk: Uint8Array) => void,
+  onExit: (reason: string) => void,
 ): Promise<LspTransport> {
   const messageChannel = new Channel<ArrayBuffer>();
   const stderrChannel = new Channel<ArrayBuffer>();
   messageChannel.onmessage = (message) => onMessage(new Uint8Array(message));
   stderrChannel.onmessage = (chunk) => onStderr(new Uint8Array(chunk));
+  const exitChannel = new Channel<string>();
+  exitChannel.onmessage = onExit;
 
   const sessionId = await invoke<number>("lsp_start", {
     onMessage: messageChannel,
     onStderr: stderrChannel,
+    onExit: exitChannel,
   });
 
   return {

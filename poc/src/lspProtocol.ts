@@ -75,6 +75,7 @@ export class LspRpcClient {
   private readonly listeners = new Map<string, Set<(params: unknown) => void>>();
   private readonly sendFrame: (frame: Uint8Array) => Promise<void>;
   private readonly requestTimeoutMs: number;
+  private sendQueue: Promise<void> = Promise.resolve();
 
   constructor(
     sendFrame: (frame: Uint8Array) => Promise<void>,
@@ -115,7 +116,7 @@ export class LspRpcClient {
       }
       options.signal?.addEventListener("abort", pending.abort, { once: true });
 
-      void this.sendFrame(encodeLspMessage({ jsonrpc: "2.0", id, method, params }))
+      void this.enqueueFrame(encodeLspMessage({ jsonrpc: "2.0", id, method, params }))
         .catch((error: unknown) => {
           this.rejectPending(
             id,
@@ -127,7 +128,7 @@ export class LspRpcClient {
 
   notify(method: string, params: unknown): Promise<void> {
     if (this.closed) return Promise.reject(new Error("LSP client is closed"));
-    return this.sendFrame(encodeLspMessage({ jsonrpc: "2.0", method, params }));
+    return this.enqueueFrame(encodeLspMessage({ jsonrpc: "2.0", method, params }));
   }
 
   onNotification(method: string, listener: (params: unknown) => void): () => void {
@@ -145,7 +146,7 @@ export class LspRpcClient {
     const message = decodeLspMessage(frame);
     if (message.method) {
       if (message.id !== undefined) {
-        void this.sendFrame(encodeLspMessage({
+        void this.enqueueFrame(encodeLspMessage({
           jsonrpc: "2.0",
           id: message.id,
           error: { code: -32601, message: "Client request method not supported" },
@@ -197,6 +198,12 @@ export class LspRpcClient {
     if (pending.abort) pending.signal?.removeEventListener("abort", pending.abort);
     this.pending.delete(id);
     return pending;
+  }
+
+  private enqueueFrame(frame: Uint8Array): Promise<void> {
+    const result = this.sendQueue.then(() => this.sendFrame(frame));
+    this.sendQueue = result.catch(() => undefined);
+    return result;
   }
 }
 

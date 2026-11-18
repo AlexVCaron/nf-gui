@@ -54,6 +54,7 @@ pub fn lsp_start(
     app: AppHandle,
     on_message: Channel<InvokeResponseBody>,
     on_stderr: Channel<InvokeResponseBody>,
+    on_exit: Channel<String>,
     state: State<'_, LspState>,
 ) -> Result<u64, String> {
     let mut active = state
@@ -85,9 +86,16 @@ pub fn lsp_start(
 
     let active = Arc::clone(&state.active);
     let worker_process = Arc::clone(&process);
-    let spawn_result = thread::Builder::new()
-        .name("lsp-channel".into())
-        .spawn(move || stream_process(worker_process, active, session_id, on_message, on_stderr));
+    let spawn_result = thread::Builder::new().name("lsp-channel".into()).spawn(move || {
+        stream_process(
+            worker_process,
+            active,
+            session_id,
+            on_message,
+            on_stderr,
+            on_exit,
+        )
+    });
     if let Err(error) = spawn_result {
         if let Ok(mut active) = state.active.lock() {
             active.take_if(|session| session.id == session_id);
@@ -134,7 +142,9 @@ fn stream_process(
     session_id: u64,
     on_message: Channel<InvokeResponseBody>,
     on_stderr: Channel<InvokeResponseBody>,
+    on_exit: Channel<String>,
 ) {
+    let mut exit_reason = "language server stream stopped".to_owned();
     loop {
         let message = {
             let Ok(process) = process.lock() else {
@@ -151,11 +161,13 @@ fn stream_process(
         match message {
             Some(Ok(message)) => {
                 if on_message.send(InvokeResponseBody::Raw(message)).is_err() {
+                    exit_reason = "language server message channel closed".to_owned();
                     break;
                 }
             }
             Some(Err(error)) => {
-                let _ = on_stderr.send(InvokeResponseBody::Raw(error.into_bytes()));
+                exit_reason = error.to_string();
+                let _ = on_stderr.send(InvokeResponseBody::Raw(exit_reason.as_bytes().to_vec()));
                 break;
             }
             None => {}
@@ -177,13 +189,13 @@ fn stream_process(
             .and_then(|mut process| process.try_wait().ok().flatten())
             .is_some();
         if exited {
-            let _ = on_stderr.send(InvokeResponseBody::Raw(
-                b"language server process exited".to_vec(),
-            ));
+            exit_reason = "language server process exited".to_owned();
+            let _ = on_stderr.send(InvokeResponseBody::Raw(exit_reason.as_bytes().to_vec()));
             break;
         }
     }
 
+    let _ = on_exit.send(exit_reason);
     if let Ok(mut active) = active.lock()
         && active
             .as_ref()

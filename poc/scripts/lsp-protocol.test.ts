@@ -53,6 +53,31 @@ test("correlates responses and dispatches notifications", async () => {
   client.close();
 });
 
+test("serializes writes so concurrent document notifications retain order", async () => {
+  const methods: string[] = [];
+  let releaseFirst: () => void = () => {};
+  let startFirst: () => void = () => {};
+  const firstStarted = new Promise<void>((resolve) => { startFirst = resolve; });
+  const firstGate = new Promise<void>((resolve) => { releaseFirst = resolve; });
+  const client = new LspRpcClient(async (value) => {
+    const message = decodeLspMessage(value);
+    methods.push(message.method!);
+    if (message.method === "first") {
+      startFirst();
+      await firstGate;
+    }
+  });
+
+  const first = client.notify("first", {});
+  const second = client.notify("second", {});
+  await firstStarted;
+  assert.deepEqual(methods, ["first"]);
+  releaseFirst();
+  await Promise.all([first, second]);
+  assert.deepEqual(methods, ["first", "second"]);
+  client.close();
+});
+
 test("rejects pending requests on cancellation, timeout, and close", async () => {
   const sent: Uint8Array[] = [];
   const client = new LspRpcClient(async (value) => { sent.push(value); }, 20);
