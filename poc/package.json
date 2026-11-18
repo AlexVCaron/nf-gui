@@ -12,7 +12,7 @@
     "audit:artifacts": "node scripts/verify-artifacts.mjs",
     "audit:npm": "npm audit --audit-level=moderate",
     "audit:cargo": "cd src-tauri && cargo audit --deny warnings",
-    "audit:dependencies": "npm run audit:npm && npm run audit:cargo",
+    "audit:dependencies": "node scripts/audit-dependencies.mjs",
     "audit:tree": "npm ls --all && cd src-tauri && cargo tree --locked -e normal,build,dev"
   },
   "dependencies": {

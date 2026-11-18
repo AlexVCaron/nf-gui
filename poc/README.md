@@ -50,12 +50,12 @@ npm sbom --sbom-format=cyclonedx > /tmp/nf-gui-poc.npm.cdx.json
 cargo metadata --format-version 1 --locked > /tmp/nf-gui-poc.cargo-metadata.json
 ```
 
-`npm run audit:dependencies` runs the checks in sequence and succeeds only when
-both pass; if the npm scan fails first, also run `npm run audit:cargo` to get its
-independent result. Review the license, source, and integrity fields in the npm
-SBOM and Cargo metadata; missing license/provenance information is an unresolved
-item, not an implicit approval. Keep generated inventories outside the
-repository unless a reviewed, dated snapshot is intentionally required.
+`npm run audit:dependencies` runs both checks even if the first one fails and
+returns a failure if either check fails. Review the license, source, and
+integrity fields in the npm SBOM and Cargo metadata; missing
+license/provenance information is an unresolved item, not an implicit approval.
+Keep generated inventories outside the repository unless a reviewed, dated
+snapshot is intentionally required.
 
 At this baseline, `npm audit` reports five high-severity findings in the Vite
 development/build chain through `picomatch` 4.0.7 (`GHSA-fc5q-39xc-vjpf`). The
