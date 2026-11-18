@@ -73,11 +73,16 @@ export class LspRpcClient {
   private closed = false;
   private readonly pending = new Map<number | string, PendingRequest>();
   private readonly listeners = new Map<string, Set<(params: unknown) => void>>();
+  private readonly sendFrame: (frame: Uint8Array) => Promise<void>;
+  private readonly requestTimeoutMs: number;
 
   constructor(
-    private readonly sendFrame: (frame: Uint8Array) => Promise<void>,
-    private readonly requestTimeoutMs = 15_000,
-  ) {}
+    sendFrame: (frame: Uint8Array) => Promise<void>,
+    requestTimeoutMs = 15_000,
+  ) {
+    this.sendFrame = sendFrame;
+    this.requestTimeoutMs = requestTimeoutMs;
+  }
 
   request(
     method: string,

@@ -218,7 +218,7 @@ function toMonacoRange(range: LspDiagnostic["range"]): monaco.Range {
 
 function normalizeHoverContents(
   contents: NonNullable<LspHover["contents"]>,
-): monaco.languages.MarkedString[] {
+): monaco.IMarkdownString[] {
   const items = Array.isArray(contents) ? contents : [contents];
   return items.map((item) => ({
     value: typeof item === "string" ? item : item.value,
