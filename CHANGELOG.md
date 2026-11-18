@@ -54,8 +54,10 @@ contents in reports.
 - `cargo fmt --all -- --check` passed. `cargo test --locked` could not compile
   the integrated crate because `glib-2.0`, `gobject-2.0`, and `gio-2.0` pkg-config
   metadata is missing.
-- CodeQL has not yet been rerun for these follow-up code changes; the previous
-  post-commit scan only completed JavaScript and timed out before other languages.
+- Post-commit CodeQL was run for these follow-up code changes but was cancelled
+  due to timeout and returned no complete results. The tool instructed not to
+  rerun. The earlier post-commit scan found zero JavaScript alerts but timed out
+  before all languages, so there is no complete all-language result.
 
 ### Limitations and next steps
 
