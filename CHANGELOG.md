@@ -36,7 +36,8 @@ contents in reports.
 - Register completion only when the server advertises `completionProvider`.
   Forward trigger characters and LSP completion context, honor Monaco
   cancellation, and map supported labels, kinds, insertion/snippet text,
-  text edits, documentation, and incomplete-list state.
+  text edits, documentation, and incomplete-list state. Advertise the
+  completion snippet and documentation-format capabilities in `initialize`.
 - Extracted defensive completion-result normalization and added tests for array
   and list responses, incomplete lists, malformed items, and invalid shapes.
   No new dependencies were introduced.

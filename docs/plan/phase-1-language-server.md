@@ -151,7 +151,8 @@ The PoC now prototypes that adapter for one sample buffer: it negotiates server
 capabilities, synchronizes edits, maps published diagnostics to Monaco markers,
 and registers completion and hover only when advertised. Completion results
 preserve supported labels, kinds, insertion text/snippets, text edits,
-documentation, and incomplete-list state; malformed list items are ignored.
+documentation, and incomplete-list state; the initialize request advertises
+snippet and documentation-format support, and malformed list items are ignored.
 It remains in progress until tested with the pinned server and native Tauri
 runtime; cancellation, disposal, and document-version handling also require
 end-to-end verification.

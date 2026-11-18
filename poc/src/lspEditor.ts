@@ -97,6 +97,9 @@ export async function connectLspEditor(
       rootUri: null,
       capabilities: {
         textDocument: {
+          completion: {
+            completionItem: { snippetSupport: true, documentationFormat: ["markdown", "plaintext"] },
+          },
           hover: { dynamicRegistration: false, contentFormat: ["markdown", "plaintext"] },
           publishDiagnostics: { relatedInformation: true },
           synchronization: { dynamicRegistration: false, didSave: false },
