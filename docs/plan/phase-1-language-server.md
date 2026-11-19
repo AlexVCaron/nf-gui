@@ -101,15 +101,19 @@ frontend.
 
 The typed client uses the pinned `@tauri-apps/api` `2.9.0` package; the advisory
 database reported no findings for this package/version. Its API-to-Rust pairing
-is implemented. The PoC UI now has explicit connect/stop controls for one
-in-memory sample document. The provider prototype performs initialize/open,
-advertised text synchronization, diagnostic marker mapping, and completion and
-hover requests when supported; it sends shutdown/exit on stop. Protocol framing,
-completion-result normalization, request correlation, cancellation, timeout,
-write ordering, and closure have focused tests. Outbound JSON-RPC frames are
-serialized so edits reach the server in document-version order. An explicit
-Tauri exit channel now tears down editor providers and markers when the child
-stops unexpectedly and lets the UI offer a retry.
+is implemented. The PoC UI now has explicit connect/stop controls, and the
+editor session owns an authoritative model registry keyed by document URI. It
+opens each model once, synchronizes advertised full or incremental changes with
+that model's version, closes only the matching model, and routes diagnostics,
+hover, and completion to registered models. Reopening one model is idempotent;
+opening a different model at an already-open URI is rejected. The current UI
+still opens only one sample document; workspace tabs and filesystem lifecycle
+are not implemented. Protocol framing, document lifecycle/sync, completion
+normalization, request correlation, cancellation, timeout, write ordering, and
+closure have focused tests. Outbound JSON-RPC frames are serialized so edits
+reach the server in document-version order. An explicit Tauri exit channel now
+tears down editor providers and markers when the child stops unexpectedly and
+lets the UI offer a retry.
 Startup checks for a process exit after both transport startup and document open,
 and the UI confirms the returned session is still active before marking it
 connected.

@@ -24,6 +24,49 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-19 — Synchronize multiple open LSP documents
+
+### Tasks/status
+
+- **P1-03 in progress:** added per-URI model lifecycle/synchronization and
+  capability-aware changes. The sample UI still opens one document; workspace
+  integration and real-server validation remain pending.
+- **P1-02 in progress:** diagnostics, hover, and completion now resolve against
+  the registered document model.
+
+### Work and decisions
+
+- Added `poc/src/lspDocumentSync.ts` as the authoritative per-session registry.
+  It sends didOpen once per model, sends only increasing-version changes,
+  supports full and incremental sync, closes the exact model by URI, and rejects
+  a different live model claiming an occupied URI.
+- Exposed `openDocument`/`closeDocument` on the LSP editor session. Route
+  diagnostics and provider requests through the matching registered model and
+  clear markers across open models during cleanup.
+- Added four focused tests for multiple URIs, idempotent opens, duplicate URIs,
+  versioned edits, full/no-change capabilities, close notifications, and
+  listener cleanup.
+
+### Validation
+
+- `npm ci` succeeded and reported zero vulnerabilities.
+- `npm test` passed all 22 tests.
+- `npm run build` passed with the existing Monaco chunk-size warning.
+- `git diff --check` passed. The first test/build attempts failed before test
+  execution because Node strip-only mode disallows TypeScript parameter
+  properties and dependencies were not installed; both issues were corrected,
+  then the tests and build passed.
+- Secret scanning and CodeQL are not yet run for this increment. Native
+  Tauri/server integration was not run; the pinned JAR is not staged and
+  required Linux GLib/GIO development metadata is unavailable.
+
+### Limitations and next steps
+
+- Add workspace UI opening/closing flows and validate multi-document and
+  cross-file behavior against the pinned server (P1-03/P1-04).
+- Keep P2 paused. Continue headless Actions planning and native/remote-desktop
+  reviewer delivery only after target runtime prerequisites are established.
+
 ## 2026-11-19 — Reject stale LSP results
 
 ### Tasks/status
