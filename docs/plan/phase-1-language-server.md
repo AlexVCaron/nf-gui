@@ -113,6 +113,9 @@ stops unexpectedly and lets the UI offer a retry.
 Startup checks for a process exit after both transport startup and document open,
 and the UI confirms the returned session is still active before marking it
 connected.
+Versioned `publishDiagnostics` notifications are ignored unless they match the
+current Monaco model version. Hover and completion responses are discarded if
+the model changes while their request is in flight.
 
 The JAR is intentionally not committed or downloaded automatically. The local
 experiment instructions in [the PoC README](../../poc/README.md) show how to

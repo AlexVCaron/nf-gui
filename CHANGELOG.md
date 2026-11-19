@@ -24,6 +24,41 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-19 — Reject stale LSP results
+
+### Tasks/status
+
+- **P1-02 in progress:** added document-version guards for diagnostics, hover,
+  and completion. This protects the single open buffer from delayed server
+  responses; it does not complete multi-document synchronization (P1-03).
+
+### Work and decisions
+
+- Ignore `textDocument/publishDiagnostics` when its URI differs from the active
+  model or its optional version is invalid/stale; retain support for valid
+  versionless server notifications.
+- Discard hover and completion responses when the editor model version changes
+  while the corresponding request is pending, and reject provider calls for
+  other model URIs.
+- Added four dependency-free tests for matching/stale versions, URI mismatches,
+  versionless diagnostics, malformed version values, and invalid payload shape.
+
+### Validation
+
+- `npm ci` succeeded; its audit reported zero vulnerabilities in this run.
+- `npm run build` passed with the existing Monaco chunk-size warning.
+- `npm test` passed all 18 tests. Rust formatting and `git diff --check` passed.
+- The integrated Rust test was not rerun; its previous attempt remains blocked
+  by missing Linux GLib/GObject/GIO development metadata. Pinned-server/native
+  integration was not run because the JAR is not staged.
+
+### Limitations and next steps
+
+- Exercise versioned diagnostics and request races against the pinned server in
+  native Tauri, then continue P1-03 with authoritative multi-document sync.
+- Keep P2 paused. Continue planning headless Actions and optional native/remote
+  desktop reviewer delivery after runtime validation.
+
 ## 2026-11-18 — Add capability-gated completion
 
 ### Tasks/status

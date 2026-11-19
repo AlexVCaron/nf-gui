@@ -2,6 +2,7 @@ import * as monaco from "monaco-editor/editor/editor.api.js";
 import { startLspTransport, type LspTransport } from "./lspTransport";
 import { LspRpcClient } from "./lspProtocol";
 import { normalizeCompletionResult, type LspCompletionItem } from "./lspCompletion";
+import { isCurrentDiagnosticsNotification } from "./lspDiagnostics";
 
 type ServerCapabilities = {
   completionProvider?: { triggerCharacters?: string[] } | boolean;
@@ -71,7 +72,7 @@ export async function connectLspEditor(
     removeDiagnosticListener = client.onNotification(
       "textDocument/publishDiagnostics",
       (params) => {
-        if (!isRecord(params) || params.uri !== uri || !Array.isArray(params.diagnostics)) return;
+        if (!isCurrentDiagnosticsNotification(params, uri, model.getVersionId())) return;
         const diagnostics = params.diagnostics.filter(isDiagnostic);
         monaco.editor.setModelMarkers(
           model,
@@ -156,7 +157,9 @@ export async function connectLspEditor(
 
     hoverProvider = capabilities.hoverProvider
       ? monaco.languages.registerHoverProvider("nextflow", {
-          provideHover: async (_hoverModel, position, token) => {
+          provideHover: async (hoverModel, position, token) => {
+            if (hoverModel.uri.toString() !== uri) return null;
+            const requestedVersion = model.getVersionId();
             const controller = new AbortController();
             const cancellation = token.onCancellationRequested(() => controller.abort());
             try {
@@ -168,7 +171,7 @@ export async function connectLspEditor(
                 },
                 { signal: controller.signal },
               ) as LspHover | null | undefined;
-              if (!result?.contents) return null;
+              if (!result?.contents || model.getVersionId() !== requestedVersion) return null;
               return {
                 contents: normalizeHoverContents(result.contents),
                 range: result.range ? toMonacoRange(result.range) : undefined,
@@ -189,7 +192,9 @@ export async function connectLspEditor(
             typeof completionCapability === "object"
               ? completionCapability.triggerCharacters
               : undefined,
-          provideCompletionItems: async (_completionModel, position, context, token) => {
+          provideCompletionItems: async (completionModel, position, context, token) => {
+            if (completionModel.uri.toString() !== uri) return { suggestions: [] };
+            const requestedVersion = model.getVersionId();
             const controller = new AbortController();
             const cancellation = token.onCancellationRequested(() => controller.abort());
             try {
@@ -205,6 +210,7 @@ export async function connectLspEditor(
                 },
                 { signal: controller.signal },
               );
+              if (model.getVersionId() !== requestedVersion) return { suggestions: [] };
               const { items, incomplete } = normalizeCompletionResult(result);
               const word = model.getWordUntilPosition(position);
               const defaultRange = new monaco.Range(
