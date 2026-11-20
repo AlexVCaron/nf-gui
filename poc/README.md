@@ -8,7 +8,8 @@ license does not replace those obligations.
 
 ## What it demonstrates
 
-- Tauri 2.9.2 desktop shell with a React/TypeScript/Vite frontend.
+- Tauri 2.12.7 desktop shell, `@tauri-apps/api` 2.12.5, and a
+  React/TypeScript/Vite frontend.
 - A local Monaco plain-text editor and a static React Flow canvas.
 - Exact direct dependency pins plus `package-lock.json` and `src-tauri/Cargo.lock`.
 - A local-only SHA-256 verifier for the optional Nextflow language-server JAR
@@ -42,9 +43,10 @@ manifest, including the deferred nf-schema blob; it will report that blob
 missing unless it has also been staged.
 
 The bundle configuration includes files placed in `artifacts/`; the runtime
-repeats the digest check before launching. This remains a single-buffer
-integration spike: it has no project workspace/file access, pipeline execution,
-plugin loading, automatic downloads, or cross-file navigation. The model uses a
+repeats the digest check before launching. This remains a single-buffer integration spike in the UI: it has no project
+workspace/file access, pipeline execution, plugin loading, automatic downloads,
+or cross-file navigation. Its session API can register multiple in-memory
+models, but no workspace UI uses that capability yet. The sample model uses a
 synthetic URI and changes are not saved. Do not use it to open or analyze an
 untrusted workflow.
 
@@ -70,9 +72,15 @@ sudo apt install -y build-essential curl wget file libxdo-dev libssl-dev \
   openjdk-17-jre-headless
 ```
 
-Install Node.js 22.12 or newer from the official
-[Node.js downloads](https://nodejs.org/en/download) page if `node --version`
-is older or unavailable. Install Rust with the official `rustup` installer:
+If Node.js is unavailable or older than 22.12, install Node.js 22 using nvm:
+
+```sh
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+source ~/.bashrc
+nvm install 22
+```
+
+Install Rust with the official `rustup` installer:
 
 ```sh
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -119,34 +127,48 @@ Xcode development tools and Java before following the shared npm/Rust/JAR steps:
 2. Open **Terminal** with **Command+Space**, type `Terminal`, and press
    **Enter**. Run `xcode-select --install`; in the popup, press **Install** and
    wait for completion.
-3. Install Node.js 22.12+ from the official Node.js download page and Java 17+
-   from [Eclipse Temurin](https://adoptium.net/temurin/releases/). In each
-   installer, press **Continue**, accept the license, choose the standard
-   destination, press **Install**, and enter the Mac password if requested.
-4. Install Rust using the command above. Type `1` and press **Enter** when the
+3. On [Node.js downloads](https://nodejs.org/en/download), select macOS and
+   download the `.pkg` installer for Node.js 22.12+ (or a newer supported
+   release). Open the downloaded file and press **Continue**, accept the
+   license, choose the standard destination, press **Install**, and enter the
+   Mac password if requested.
+4. On [Eclipse Temurin](https://adoptium.net/temurin/releases/), select version
+   **17**, operating system **macOS**, the Mac's processor architecture
+   (**AArch64** for Apple Silicon or **x64** for Intel), and package **JRE**.
+   Download/open the `.pkg`, then press **Continue**, accept the license,
+   choose the standard destination, press **Install**, and enter the Mac
+   password if requested.
+5. Install Rust using the command above. Type `1` and press **Enter** when the
    rustup installer asks for an installation choice. Close and reopen Terminal.
-5. In Terminal, run `cd /path/to/nf-gui/poc` (replace the path with the actual
-   repository location), then use the same `npm ci`, JAR download,
-   tests, build, and `npm run tauri dev` commands. Verify the JAR with:
+6. In Terminal, change to your repository's `poc` folder. Replace the sample
+   path below with the actual location you cloned into, then enter:
 
    ```sh
+   cd /path/to/your/nf-gui/poc
+   npm ci
+   mkdir -p artifacts
+   curl -fL https://github.com/nextflow-io/language-server/releases/download/v26.10.2/language-server-all.jar \
+     -o artifacts/language-server-all.jar
    printf '%s  %s\n' \
      '20326778651c5c5e5f40a570c2275d1f520419941624386a2b1a111f1dfa4b26' \
      'artifacts/language-server-all.jar' | shasum -a 256 -c -
+   npm test
+   npm run build
+   npm run tauri dev
    ```
+
+   When the app window appears, press **Connect language server**, then press
+   **Stop language server** to verify shutdown.
 
 The JAR uses Java on macOS, including Apple Silicon; the separate upstream
 standalone bundle is not used by this prototype.
 
-### Windows — not an approved runtime target yet
+### Windows — not validated here
 
-Do not build or run this PoC on Windows yet. The pinned Tauri 2.9.2 dependency
-has the documented Windows advisory described below; the project gate requires
-upgrading to at least 2.11.1 and re-auditing before Windows support is enabled.
-After that gate is cleared, Windows setup will require the Visual Studio C++
-Build Tools (Desktop development with C++ workload), Microsoft Edge WebView2,
-Node.js 22.12+, Rust's MSVC toolchain, and Java 17+. Those steps are deliberately
-not presented as a currently supported way to run this prototype.
+The pinned Tauri `2.12.7` is above the first patched release (`2.11.1`) for
+GHSA-7gmj-67g7-phm9. However, Windows builds and runtime behavior have not been
+validated here, and full dependency audit/build evidence is required before
+claiming Windows support. Android is not a target of this desktop prototype.
 
 From this directory:
 
@@ -184,34 +206,23 @@ investigation rather than an assumption that the dependency is closed.
 Keep generated inventories outside the repository unless a reviewed, dated
 snapshot is intentionally required.
 
-At this baseline, `npm audit` reports five high-severity findings in the Vite
-development/build chain through `picomatch` 4.0.7 (`GHSA-fc5q-39xc-vjpf`). The
-advisory has no patched picomatch release available. npm suggests downgrading
-Vite to 6.2.7, but the advisory review also flags that Vite line for a
-dev-server WebSocket file-read issue (through 6.4.1) and a separate
-`launch-editor` issue (through 6.4.3). Vite 6.4.4 includes the latter fixes but
-still depends on the affected `picomatch` range. Do not apply a Vite-only
-downgrade or use `npm audit fix` to silence the finding. Keep the dev server
-loopback-only and re-run both advisory checks whenever the lockfile changes.
+The earlier lockfile audit found npm and RustSec advisories. This checkpoint
+updated the direct Tauri dependencies and transitive lockfile; the current npm
+audit is clean. The current Rust lockfile audit is recorded below after the
+latest dependency update. Keep the dev server loopback-only and rerun both
+advisory checks whenever the lockfile changes.
+The earlier Tauri 2.9.2 baseline was affected by
+[GHSA-7gmj-67g7-phm9](https://github.com/advisories/GHSA-7gmj-67g7-phm9)
+on Windows and Android. This checkpoint now pins Tauri 2.12.7, which is newer
+than the advisory's first patched version, 2.11.1. The GHSA is therefore no
+longer a known current-version blocker, but the complete dependency graph still
+requires re-audit and Windows has not been built or tested.
 
-The current `cargo audit --deny warnings` also reports five RustSec warnings in
-the lockfile (three unmaintained crates and two unsoundness advisories).
-The `chrono` warning is present in Cargo.lock through an optional `serde_with`
-feature but has no active dependency path in `cargo tree --target all`; the
-other warnings are reachable through Tauri's transitive dependencies, including
-platform-specific GTK/WebKit dependencies. Cargo-audit checks locked packages,
-including optional entries.
-The RustSec database did not report the separate Tauri 2.9.2 Windows/Android
-GHSA. Keep both results visible; do not treat the tool's exit status as an
-override of the upstream advisory or the unresolved warnings.
-
-Tauri 2.9.2 is retained only for this prototype. It is affected by
-[GHSA-7gmj-67g7-phm9](https://github.com/advisories/GHSA-7gmj-67g7-phm9) on
-Windows and Android. The advisory database tool did not report this finding,
-so the explicit advisory controls: do not ship or claim Windows/Android support
-until Tauri is upgraded to a patched version (at least 2.11.1) and the full
-dependency graph is re-audited. A passing scanner result cannot override a
-known advisory.
+Tauri 2.12.7 and the matching JavaScript API/CLI updates were made after the
+older 2.9.2 dependency graph failed native compilation due to incompatible
+resolved Tauri runtime/Wry interfaces. The native Linux build now serves as the
+first integrated build validation; it does not establish Windows or macOS
+support.
 
 The prototype's own code is MIT-licensed. This does not relicense its
 dependencies; preserve each dependency's attribution and license notices and
@@ -219,20 +230,20 @@ meet any applicable source-availability obligations.
 
 ### Deferred security risks and upgrade gates
 
-The user has accepted the current npm and RustSec findings for local PoC/Phase 1
-work only. npm still reports five high findings in the Vite/picomatch build
-graph; RustSec reports five warnings in the locked Tauri graph. These are
-deferred, not fixed or scanner false positives. Keep the dev server bound to
-`127.0.0.1`; rerun audits after dependency changes and before distribution.
+Previous npm and RustSec findings were recorded against an older dependency
+graph. The refreshed npm audit currently reports zero vulnerabilities; see the
+current Rust audit result below. Treat any remaining findings as unresolved
+until specifically addressed, not as false positives. Keep the dev server bound
+to `127.0.0.1`.
 The exact findings and RustSec package paths are recorded in the
 [Phase 0 risk register](../docs/plan/phase-0-audit-findings.md#accepted-and-deferred-risks).
 
-Tauri 2.9.2 remains a PoC-only choice. Do not ship or claim Windows/Android
-support until upgrading to at least 2.11.1 and re-auditing. The nf-schema blob
-was not verified and is not included or enabled; verify its digest/provenance
-and resolve the version boundary before use. The Monaco LSP bridge is also
-deferred pending compatibility and advisory review. None of these deferrals
-indicates that the dependency graph is suitable for a release.
+Tauri 2.12.7 includes the documented Windows/Android advisory fix, but desktop
+platform support still requires per-platform build/runtime validation and a
+fresh full audit. The nf-schema blob was not verified and is not included or
+enabled; verify its digest/provenance and resolve the version boundary before
+use. None of these deferrals indicates that the dependency graph is suitable
+for a release.
 
 ### Verify optional runtime artifacts
 

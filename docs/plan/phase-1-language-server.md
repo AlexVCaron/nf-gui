@@ -99,9 +99,10 @@ pinned SHA-256 and regular-file status, then launches fixed `java -jar` with a
 cleared environment except for `PATH`. No executable or JAR path comes from the
 frontend.
 
-The typed client uses the pinned `@tauri-apps/api` `2.9.0` package; the advisory
-database reported no findings for this package/version. Its API-to-Rust pairing
-is implemented. The PoC UI now has explicit connect/stop controls, and the
+The typed client uses the pinned `@tauri-apps/api` `2.12.5` package and Tauri
+Rust crate `2.12.7`; the GitHub advisory database reported no findings for the
+updated API, CLI, and Rust crates. The API-to-Rust pairing has now passed a
+native Linux build. The PoC UI has explicit connect/stop controls, and the
 editor session owns an authoritative model registry keyed by document URI. It
 opens each model once, synchronizes advertised full or incremental changes with
 that model's version, closes only the matching model, and routes diagnostics,

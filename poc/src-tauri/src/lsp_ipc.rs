@@ -36,6 +36,7 @@ impl LspState {
             .lock()
             .map_err(|_| "language server process is unavailable".to_owned())?
             .terminate()
+            .map(|_| ())
             .map_err(|error| error.to_string())
     }
 

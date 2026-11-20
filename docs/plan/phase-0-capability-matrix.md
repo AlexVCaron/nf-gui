@@ -10,7 +10,9 @@ Nextflow model.
 
 All capability and baseline conclusions here are derived from the cited upstream
 evidence collected in [phase-0-audit-findings.md](phase-0-audit-findings.md),
-especially the P0-01 through P0-05 and P0-07 sections.
+especially the P0-01 through P0-05 and P0-07 sections. The current integration
+pins below are dated implementation updates, not claims that the older
+feature-audit evidence automatically applies to newer server releases.
 
 ## Selected baseline
 
@@ -25,9 +27,10 @@ architecture:
 | Existing-project opening policy | Do not require opened projects to upgrade to `26.04.3+` | Existing projects must still open; the app should inspect project-declared compatibility and configure language analysis conservatively instead of forcing a global engine floor on the user's repository. |
 | Nextflow engine / parser line for audited semantics | `26.04.6` | Current stable audited release line; strict parser is enabled by default in 26.04+. |
 | Parser mode | Strict parser by default on the audited `26.04` line, with project-version-aware fallback decisions still required | The language server and the audited `nf-lang` path depend on strict-parser semantics, but existing projects may need older language lines or non-strict handling to avoid false positives. |
-| Language server | `nextflow-io/language-server` `v26.04.4` | Current stable audited server release with documented stdio transport and custom graph commands. |
-| Desktop shell | Tauri `2.9.2` PoC baseline | Retained for the prototype. GHSA-7gmj-67g7-phm9 affects Tauri through `2.11.0` on Windows/Android; do not ship or claim support for those targets until upgrading to a patched release (at least `2.11.1`) and re-auditing. |
-| Frontend bridge | `@tauri-apps/api` `2.9.0` | Added for Phase 1's typed invoke/channel helper and scoped LSP commands. Advisory database reported no findings for this version; end-to-end Tauri/JavaScript pairing remains unproven until the native bridge builds and runs. |
+| Language server feature-audit baseline | `nextflow-io/language-server` `v26.04.4` | Phase 0 capability findings remain specifically tied to this audited version. |
+| Language server integration artifact | `nextflow-io/language-server` `v26.10.2` | Latest stable release published 2026-10-27; the JAR's GitHub release digest was independently verified. Initialize/shutdown works locally; feature compatibility and server behavior still require P1 validation. |
+| Desktop shell | Tauri `2.12.7` | Updated from 2.9.2 after a native dependency-interface compilation failure and to exceed GHSA-7gmj-67g7-phm9's first patched version (`2.11.1`). Native Linux build remains in progress; macOS/Windows remain unvalidated. |
+| Frontend bridge | `@tauri-apps/api` `2.12.5` | Updated with Tauri for a compatible current stable pairing. Advisory database returned no direct findings; live IPC remains untested. |
 | Canvas | `@xyflow/react` `12.11.6` | Current acceptable audited canvas dependency. |
 | Source editor path | Monaco, with the bridge selection reopened for phase 1 | The prototype uses Monaco `0.57.0` as plain text only. The previously selected stable compatibility set remains a candidate, but its full npm graph surfaced advisories and needs a fresh compatibility/security review before integration. |
 | Monaco editor | `0.55.1` bridge candidate; `0.57.0` standalone PoC | `0.55.1` is the documented stable compatibility-table entry with client `10.7.0`; `0.57.0` is used only by the non-LSP prototype. Both roles must remain distinct. |
@@ -65,7 +68,7 @@ reconfiguration on older or not-yet-migrated projects.
 | Project language-line handling | Supported by language-server configuration, not yet designed in nf-gui | The official client can set `nextflow.languageVersion` per workspace and restart the server when that value changes. | nf-gui still needs an explicit policy for detecting a project's declared Nextflow version and choosing the right supported language line or warning/fallback behavior. |
 | Schema dialect handling | Mixed upstream ecosystem; conservative UX decision recorded | nf-schema 2.8.0 is a 2020-12-only validator with Nextflow-specific evaluators; nf-core/tools code has dialect-selection support, despite conflicting migration guidance. | Display schema provenance/dialect and declared metadata separately from validation and effective values; do not infer or auto-convert unknown schemas or execute checks on open. |
 | Available structured edits | Rename plus typed-conversion commands | Official rename returns `WorkspaceEdit`; typed conversion is an execute-command workflow. Parser AST positions exist, but exact editable subranges and cross-version API stability are not established. | No upstream structured edit API exists for visual graph rewiring, port creation, or argument-binding edits; source-preserving adapter edits remain unproven. |
-| Release compatibility | Stable server release line plus conservative frontend/editor candidates | Java 17+, Nextflow 26.04 semantics, Tauri 2.9.2 for PoC only, and the separately reviewed Monaco compatibility set. | The PoC graph exists but has unresolved npm/RustSec findings and a known Tauri GHSA; upgrade and re-audit before Windows/Android shipment. Packaged editor transport/workers remain unverified. |
+| Release compatibility | Pinned current integration dependencies and conservative editor candidates | Java 17+, a historical Nextflow 26.04 semantics audit, server JAR v26.10.2 for integration, Tauri 2.12.7, and the separately reviewed Monaco compatibility set. | Re-audit the full graph after Tauri updates; run native behavior checks per platform. The v26.10.2 feature set and packaged editor transport/workers remain unverified. |
 
 ## Feature-to-semantics and edit-path matrix
 
@@ -118,11 +121,11 @@ strategy:
    transactions; official `WorkspaceEdit` where upstream already provides it.
 4. **Authoritative runtime boundary:** no implicit execution, plugin start, or
    remote-module installation during ordinary inspection/editing.
-5. **Selected managed toolchain baseline:** Java 17+, Tauri `2.9.2` for the
-   PoC only (upgrade to at least `2.11.1` before Windows/Android release),
-   `@tauri-apps/api` `2.9.0`, Nextflow `26.04` semantics, language server
-   `v26.04.4`, and conservative stable Monaco compatibility rather than the
-   current prerelease bridge line.
+5. **Selected managed toolchain baseline:** Java 17+, Tauri `2.12.7`,
+   `@tauri-apps/api` `2.12.5`, Nextflow `26.04` semantics (the historical
+   audited line), language server `v26.10.2` (current integration artifact),
+   and conservative stable Monaco compatibility rather than the current
+   prerelease bridge line. Server behavior on v26.10.2 remains to be verified.
 6. **Existing-project policy:** do not require every opened repository to move
    to `26.04.3+`; instead, detect project compatibility and select the closest
    supported language line or warn/fallback conservatively.
@@ -140,14 +143,13 @@ source-edit ranges and round trips. These remain explicit limitations, not
 upstream guarantees or completed implementation.
 
 **P0-07 and P0-EXIT are complete for the scoped, non-shipping prototype by
-explicit risk disposition, not because all scanners are clean.** The npm
-development graph has five high findings, and the Rust lockfile has five
-RustSec warnings. The user approved deferring these for local PoC/Phase 1 work.
-Tauri `2.9.2` remains PoC-only; do not ship or claim Windows/Android support
-until upgrading to at least `2.11.1` and re-auditing. The unused nf-schema blob
-and Monaco LSP bridge are deferred candidates and must be verified/reviewed
-before adding them. See the [accepted and deferred risk register](phase-0-audit-findings.md#accepted-and-deferred-risks)
-for exact findings, constraints, and upgrade triggers. Registry attestations
-remain unverified. Keep required open-source license notices/source obligations.
+explicit risk disposition, not because all scanners are clean.** The original
+audit recorded five npm high findings and five RustSec warnings; the dependency
+graph has since changed and must be re-audited before relying on those counts.
+Tauri `2.12.7` is above the first fixed release for GHSA-7gmj-67g7-phm9, but
+Windows and macOS remain unvalidated. The unused nf-schema blob remains
+deferred. See the [accepted and deferred risk register](phase-0-audit-findings.md#accepted-and-deferred-risks)
+for historical findings and upgrade triggers. Registry attestations remain
+unverified. Keep required open-source license notices/source obligations.
 Re-open P0-07/P0-EXIT before any release, broader distribution, material
 dependency change, or use of a deferred artifact.
