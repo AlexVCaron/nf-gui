@@ -24,6 +24,78 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-20 — Pin current language-server and Tauri baseline
+
+### Tasks/status
+
+- **P0-07 and P0-EXIT re-opened and re-audited:** the Tauri dependency graph
+  changed materially and Cargo audit reports three denied RustSec findings.
+  Their paths and platform exposure were checked; the existing deferral remains
+  limited to internal PoC/Phase 1. Both tasks are complete for that non-shipping
+  scope, not as a clean audit or release approval.
+- **P1-01 in progress:** updated the Tauri baseline and compiled/started the app
+  on Ubuntu, but the Connect/Stop UI-to-server flow remains unverified.
+- **P1-02 in progress:** documented repeatable platform setup and the precise
+  validation boundary; real-server behavior through the Monaco/Tauri UI remains
+  outstanding.
+
+### Work and decisions
+
+- Pinned the Nextflow language-server artifact to `v26.10.2`; the release
+  SHA-256 was independently verified. Updated Tauri to `2.12.7`,
+  `tauri-build` to `2.7.6`, `@tauri-apps/api` to `2.12.5`, and
+  `@tauri-apps/cli` to `2.12.6`. The Tauri update resolves the prior native
+  dependency-interface compile failure and exceeds the documented
+  GHSA-7gmj-67g7-phm9 fixed-version threshold.
+- Mapped the Tauri stop-command exit status to unit for the updated API.
+- Added Ubuntu, macOS, and Windows x64 setup steps to the [PoC
+  README](poc/README.md), clearly marking Ubuntu as the only platform built
+  here. Added PowerShell instructions to stage and hash-check the JAR on
+  Windows; macOS and Windows remain unvalidated.
+- Updated the [Phase 0 capability matrix](docs/plan/phase-0-capability-matrix.md),
+  [dependency findings](docs/plan/phase-0-audit-findings.md), [Phase 1
+  checkpoint](docs/plan/phase-1-language-server.md), and
+  [task tracker](PLAN_TRACKING.md) to distinguish the historical v26.04.4
+  capability audit from the v26.10.2 integration artifact and to record current
+  findings.
+
+### Validation
+
+- The JAR SHA-256 matched the release digest; a direct LSP
+  initialize/shutdown/exit exchange passed.
+- `npm test` passed 22/22; `npm run audit:npm` reported zero vulnerabilities.
+- `cargo test --locked` passed 16/16. `cargo fmt --all -- --check` and
+  `git diff --check` passed.
+- `npm run tauri -- build --no-bundle` passed on Ubuntu 24.04 x86_64, with the
+  existing Monaco chunk-size warning. The built app launched under Xvfb and
+  remained running until the 25-second timeout (exit 124); accessibility/EGL
+  warnings appeared. No buttons were clicked, so this is not an interactive
+  IPC test.
+- `npm run audit:artifacts` verified the language-server JAR but failed on the
+  intentionally unstaged `nf-schema-2.8.0.blob`.
+- `cargo audit --deny warnings` failed on unmaintained `chrono`
+  (`RUSTSEC-2026-0543`) and `proc-macro-error` (`RUSTSEC-2024-0370`), and
+  unsound `glib` (`RUSTSEC-2024-0429`; fixed upstream at `>=0.20.0`). No fixed
+  upgrade was reported for the two unmaintained crates. `cargo tree --target
+  all` found no active path for `chrono`; `proc-macro-error` is reached through
+  `glib-macros`, and the `glib`/GTK path is present in the Linux target tree but
+  absent from the checked Windows/macOS target trees. No compatible standalone
+  GLib 0.20 upgrade was identified for Tauri's current GTK stack. These findings
+  remain deferred only for the already-approved non-shipping PoC/Phase 1 scope.
+- macOS and Windows builds were not run. The actual JAR-backed Tauri UI flow,
+  Connect/Stop controls, diagnostics, hover, and completion were not exercised.
+  Secret scanning found no secrets in the changed files. CodeQL remains
+  outstanding for this increment.
+
+### Limitations and next steps
+
+- Keep the explicitly deferred dependency findings outside any release/support
+  claim; obtain a new risk disposition if the scope expands.
+- Commit the paired tracker/changelog updates, then run CodeQL.
+- Keep P1-01/P1-02 in progress until the pinned server is exercised through the
+  Tauri UI. Validate macOS and Windows on their native platforms before
+  claiming support; keep P2 paused.
+
 ## 2026-11-19 — Synchronize multiple open LSP documents
 
 ### Tasks/status

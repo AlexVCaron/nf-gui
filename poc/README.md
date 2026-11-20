@@ -58,8 +58,9 @@ with `npm run tauri dev` or package it with `npm run tauri -- build`.
 Prerequisites: Node.js 22.12+ (Vite 8), npm, Rust/Cargo, Java 17+, and the
 platform dependencies listed in the official
 [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/). The
-supported setup instructions below distinguish the Linux environment validated
-for this checkpoint from platforms that have not yet been built here.
+setup instructions below distinguish the Ubuntu environment validated for this
+checkpoint from macOS and Windows, which have not yet been built here. These
+instructions do not by themselves establish supported-platform status.
 
 ### Ubuntu 24.04 x86_64 — validated here
 
@@ -116,6 +117,8 @@ In the app window, press **Connect language server**. To verify shutdown, press
 **Stop language server**; to retry after an error, press **Retry language
 server**. The JAR must be staged before building because it is a bundled
 resource. `artifacts/` is git-ignored; do not commit the JAR.
+The Linux native build and a virtual-display window launch were checked here;
+the buttons and language-server UI flow were not interactively exercised.
 
 ### macOS — Tauri prerequisites documented; not validated here
 
@@ -163,21 +166,65 @@ Xcode development tools and Java before following the shared npm/Rust/JAR steps:
 The JAR uses Java on macOS, including Apple Silicon; the separate upstream
 standalone bundle is not used by this prototype.
 
-### Windows — not validated here
+### Windows x64 — setup documented; not validated here
 
 The pinned Tauri `2.12.7` is above the first patched release (`2.11.1`) for
 GHSA-7gmj-67g7-phm9. However, Windows builds and runtime behavior have not been
-validated here, and full dependency audit/build evidence is required before
-claiming Windows support. Android is not a target of this desktop prototype.
+validated here. These steps target x64; full dependency audit/build evidence
+and platform testing are required before claiming Windows support. Android is
+not a target of this desktop prototype.
 
-From this directory:
+1. In a browser, download and run [Visual Studio Build Tools
+   2022](https://visualstudio.microsoft.com/visual-cpp-build-tools/). In the
+   installer, select **Desktop development with C++**; ensure the MSVC v143
+   build tools and a Windows 10 or 11 SDK are selected, then press **Install**.
+   The full Visual Studio IDE is not required.
+2. Install the [Microsoft Edge WebView2 Evergreen
+   Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). On
+   Windows 11 it is normally already present; install the x64 Evergreen
+   Standalone Runtime if it is missing.
+3. Download Node.js 22.12+ for Windows from [Node.js
+   downloads](https://nodejs.org/en/download), open the x64 `.msi`, accept the
+   license, keep the standard features and **Add to PATH** enabled, and finish
+   the installation.
+4. Download Eclipse Temurin **JRE 17**, **Windows x64**, `.msi` from
+   [Adoptium](https://adoptium.net/temurin/releases/). Run it with the standard
+   options and enable **Add to PATH** if the installer offers that option.
+5. Download and run `rustup-init.exe` from [rustup.rs](https://rustup.rs/).
+   Choose the default installation (type **1** and press **Enter**); use the
+   `x86_64-pc-windows-msvc` target. Close and reopen PowerShell afterward.
+6. Open PowerShell (press **Windows**, type **PowerShell**, then press
+   **Enter**). Check the tools:
 
-```sh
+```powershell
+node --version
+npm --version
+rustc --version
+java -version
+```
+
+Each command must print a version. Change to the repository's `poc` folder,
+then run:
+
+```powershell
+cd C:\path\to\nf-gui\poc
 npm ci
-npm run build
+New-Item -ItemType Directory -Force artifacts | Out-Null
+Invoke-WebRequest `
+  -Uri https://github.com/nextflow-io/language-server/releases/download/v26.10.2/language-server-all.jar `
+  -OutFile artifacts/language-server-all.jar
+$expected = '20326778651c5c5e5f40a570c2275d1f520419941624386a2b1a111f1dfa4b26'
+$actual = (Get-FileHash artifacts/language-server-all.jar -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($actual -ne $expected) { throw "Language-server JAR SHA-256 mismatch: $actual" }
 npm test
+npm run build
 npm run tauri dev
 ```
+
+Replace `C:\path\to\nf-gui\poc` with the actual folder. When the app window
+appears, press **Connect language server**, then **Stop language server** to
+verify shutdown. If Java startup fails, check that `java -version` works in the
+same PowerShell window.
 
 The Vite development server binds only to `127.0.0.1`. The Tauri window uses a
 restrictive CSP and has no enabled capability permissions.

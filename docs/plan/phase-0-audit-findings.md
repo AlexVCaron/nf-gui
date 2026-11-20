@@ -196,7 +196,11 @@ Key evidence:
 | `dompurify` `3.4.18` | MPL-2.0 or Apache-2.0 | Transitive Monaco dependency pinned by npm override to a version without the observed DOMPurify findings; recheck compatibility and license on updates. |
 | `tauri-build` `2.7.5` | MIT or Apache-2.0 | Exact Cargo build dependency; included in the resolved Rust graph. |
 
-## P0-07 candidate dependency and supply-chain snapshot
+## P0-07 candidate dependency and supply-chain snapshot (2026-11-18)
+
+This section preserves the original P0-07 findings and dependency versions as
+they stood on 2026-11-18. The integration baseline has since changed; the
+follow-up audit and current lockfile results are recorded below.
 
 ### Accepted and deferred risks
 
@@ -225,13 +229,13 @@ non-shipping UI/build checkpoint.
 | Tauri core | `2.9.2` PoC; `2.11.1` minimum patched candidate | Runtime platform | Locked in `poc/src-tauri/Cargo.lock`; direct GHSA-7gmj-67g7-phm9 says `2.9.2` is affected on Windows/Android. Advisory DB and `cargo-audit` outcomes must not override this explicit finding. | Keep `2.9.2` for prototype only; upgrade and re-audit before Windows/Android shipment or support. |
 | Tauri build helper | `tauri-build` `2.7.5` | Build dependency | Exact version in `poc/src-tauri/Cargo.toml`; its advisory database query returned no finding. The generated Rust lockfile resolves 493 third-party packages. | Pinned for reproducible PoC builds; review the full graph before any release decision. |
 | React / React DOM | `19.1.0` / `19.1.0` | Runtime UI | Exact direct pins; MIT. `npm` lockfile v3 records resolved tarball URLs and SRI values. | Included and used by the prototype. |
-| `monaco-editor` | `0.57.0` | Runtime editor | Exact direct pin; MIT. `npm audit` identified a vulnerable transitive DOMPurify resolution; the lock resolves the reviewed `3.4.18` override. | Included as plain text only; no language server or semantic features. |
+| `monaco-editor` | `0.57.0` | Runtime editor | Exact direct pin; MIT. `npm audit` identified a vulnerable transitive DOMPurify resolution; the lock resolves the reviewed `3.4.18` override. | Included as a plain-text model; Phase 1 now connects it through a project-owned LSP adapter, not a VS Code client. |
 | `@xyflow/react` | `12.11.6` | Runtime canvas | Exact direct pin; MIT. `npm` lockfile v3 records the resolved graph and package SRI values. | Included for a static, non-editable sample graph. |
-| `@tauri-apps/cli` | `2.12.5` | Build/development tool | Exact direct pin; registry integrity is recorded in `package-lock.json`. | Included as the Tauri build/dev command. |
+| `@tauri-apps/cli` | `2.12.5` | Build/development tool | Exact direct pin at the original snapshot; registry integrity is recorded in `package-lock.json`. | Updated to `2.12.6` in the later implementation baseline below. |
 | TypeScript toolchain | `typescript` `6.0.3`, `@types/node` `26.6.6`, `@types/react` `19.1.8`, `@types/react-dom` `19.1.6`, `@vitejs/plugin-react` `6.0.2` | Development/build tools | Exact pins in the npm manifest/lock; excluded from the runtime-only npm audit. | Included for the prototype frontend build. |
 | Vite / React plugin | `8.3.8` / `6.0.2` | Build/development tools | Exact pins; npm audit reports five high-severity findings through `picomatch` `4.0.7`. The advisory review flags Vite `6.2.7` for a dev-server WebSocket file-read issue (through `6.4.1`) and a separate `launch-editor` issue (through `6.4.3`); Vite `6.4.4` addresses those but still declares the affected `picomatch` range. | No Vite-only safe downgrade identified; keep the server bound to `127.0.0.1`, recheck when advisories or lockfile change, and do not ship this baseline. |
-| `monaco-languageclient` / Codingame API | `10.7.0` / `25.1.2` | Deferred runtime bridge candidates | A trial resolution produced 50 npm audit findings (44 moderate, 6 high) across 108 packages. npm's proposed major updates (`11.0.3` / `39.0.4`) need new compatibility and advisory review. | Removed from the prototype manifest; no LSP bridge is implemented. |
-| `@tauri-apps/api` | `2.9.0` | Deferred runtime bridge candidate | npm registry metadata publishes integrity/signature/provenance information; not included in the prototype, so its Tauri pairing is still unproven. | Add only with a Phase 1 IPC integration and fresh lockfile/advisory review. |
+| `monaco-languageclient` / Codingame API | `10.7.0` / `25.1.2` | Deferred runtime bridge candidates | A trial resolution produced 50 npm audit findings (44 moderate, 6 high) across 108 packages. npm's proposed major updates (`11.0.3` / `39.0.4`) need new compatibility and advisory review. | Still excluded; Phase 1 uses a smaller project-owned adapter over Tauri channels. |
+| `@tauri-apps/api` | `2.9.0` | Deferred runtime bridge candidate | npm registry metadata publishes integrity/signature/provenance information; not included at the original snapshot. | Later added at `2.12.5` for the Phase 1 Tauri IPC integration; see the follow-up audit below. |
 | Nextflow language server | `v26.04.4` | Optional external Java runtime artifact | Tag resolves to `3abf57f952eddf7e02e51d382861184c3ed7d24d`; Apache-2.0; release metadata digest is `e1c5da90c7f0565ba9e64ac3c5b58f1215e315d6bfe4414d62ff2d02749e8887`. Downloaded JAR SHA-256 independently matched this value. | Manifested in `poc/artifacts/manifest.json`; not bundled or executed by the prototype. |
 | Nextflow core | `26.04.6` | Optional/managed engine runtime | Official tag `232b60569865e9a4577e48c1955409238359d6ca`, Apache-2.0; release checksum `61a755edbed743cfbb568f3a6c67af68481a2f6a4d6dffcc4295e51318968281`; above known `26.04.3` advisory fix. | Accept as audited semantic baseline, not a forced project upgrade. |
 | `nf-schema` | `2.8.0` | Optional runtime plugin | Apache-2.0; registry metadata lists blob SHA-256 `1466fea73502dda8c8059dfe4190be1a857151bc2a500a87a86ffd223918a3f2`; tagged build and registry metadata indicate Nextflow `26.04.0`, while README says `25.10.0+`. Blob download was unavailable from this environment, so local verification remains outstanding. | Manifested but not enabled; keep the conservative `26.04.0+` boundary and verify the downloaded blob before any use. |
@@ -246,10 +250,56 @@ Additional notes:
 - `npm run audit:dependencies` now executes both npm and Cargo checks even if npm reports a failure, and returns nonzero if either check fails. Its tests cover both the fail-and-continue path and the all-checks-pass path.
 - An official Nextflow security advisory affected core versions up to `26.04.2`; keep any selected Nextflow engine baseline at `26.04.3+`.
 
-Artifact evidence references:
+## Implementation dependency re-audit — 2026-11-20
+
+The Phase 1 request to update the Tauri baseline materially changed the locked
+dependency graph, so P0-07 and P0-EXIT are reopened. The currently pinned
+versions are Tauri `2.12.7`, `tauri-build` `2.7.6`, `@tauri-apps/api`
+`2.12.5`, and `@tauri-apps/cli` `2.12.6`. The direct advisory-database check
+reported no finding for these updated Tauri packages. The prior
+GHSA-7gmj-67g7-phm9 Tauri version gate (`>=2.11.1`) is met, but this alone does
+not establish cross-platform support or a clean transitive audit.
+
+- `npm run audit:npm` passed with no reported vulnerabilities in the current
+  lockfile.
+- `cargo audit --deny warnings` checked 428 dependencies and failed on three
+  denied advisories: unmaintained `chrono` (`RUSTSEC-2026-0543`) and
+  `proc-macro-error` (`RUSTSEC-2024-0370`), and unsound `glib`
+  (`RUSTSEC-2024-0429`, patched in `glib >=0.20.0`). RustSec reports no fixed
+  upgrade for the two unmaintained crates. Review their dependency paths and
+  feasible upgrades; document any remaining risk before closing P0-07.
+- The Ubuntu 24.04 x86_64 `npm run tauri -- build --no-bundle` native build
+  passed after upgrading the Tauri pins and adapting the LSP stop-command return
+  type. The compiled application remained running under Xvfb until the test
+  timeout; this did not exercise the Connect/Stop controls or prove server IPC.
+- The staged Nextflow language-server `v26.10.2` JAR independently matched its
+  release SHA-256. `npm run audit:artifacts` passed that entry but failed because
+  the intentionally deferred `nf-schema-2.8.0.blob` is not staged.
+- The current Tauri lockfile has only been built on Ubuntu. macOS and Windows
+  instructions are documented in the [PoC README](../../poc/README.md), but
+  neither platform has been built or run here.
+
+Do not mark P0-07/P0-EXIT complete based on the successful native build or clean
+npm audit alone. The RustSec findings were traced: `chrono` has no active
+dependency path in the current Cargo tree; `proc-macro-error` is reached through
+`glib-macros`; and `glib`/`glib-macros` are reached through Tauri's GTK/WebKit
+stack on Linux, while the checked Windows and macOS target trees do not include
+`glib`. `glib >=0.20.0` is the published fix, but the current Tauri GTK stack
+uses the `0.18` bindings and no independent compatible upgrade was identified.
+The existing approval to defer these findings remains limited to the internal,
+non-shipping PoC/Phase 1 scope. P0-07 and P0-EXIT are complete for that scope
+with the warnings explicitly deferred—not clean, fixed, or approved for release.
+Any broader distribution or platform-support claim requires a new disposition
+and platform-specific validation.
+
+### Current implementation package records
 
 - [Tauri 2.9.2 crates.io record](https://crates.io/api/v1/crates/tauri/2.9.2)
 - [Tauri 2.11.1 crates.io record](https://crates.io/api/v1/crates/tauri/2.11.1)
+- [Tauri 2.12.7 crates.io record](https://crates.io/api/v1/crates/tauri/2.12.7)
+- [tauri-build 2.7.6 crates.io record](https://crates.io/api/v1/crates/tauri-build/2.7.6)
+- [@tauri-apps/api 2.12.5 npm record](https://registry.npmjs.org/%40tauri-apps%2Fapi/2.12.5)
+- [@tauri-apps/cli 2.12.6 npm record](https://registry.npmjs.org/%40tauri-apps%2Fcli/2.12.6)
 - [`@tauri-apps/api` 2.9.0 npm record](https://registry.npmjs.org/%40tauri-apps%2Fapi/2.9.0)
 - [`@xyflow/react` 12.11.6 npm record](https://registry.npmjs.org/%40xyflow%2Freact/12.11.6)
 - [`monaco-editor` 0.57.0 npm record](https://registry.npmjs.org/monaco-editor/0.57.0)

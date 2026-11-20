@@ -124,10 +124,12 @@ the model changes while their request is in flight.
 
 The JAR is intentionally not committed or downloaded automatically. The local
 experiment instructions in [the PoC README](../../poc/README.md) show how to
-stage the already-pinned release for packaging. The adapter has not yet been
-exercised against the real server or through a native Tauri build. Workspace
-lifecycle, process-tree management, restart recovery, cross-file behavior, and
-the full Monaco feature set remain unproven.
+stage the already-pinned release for packaging. A direct JAR initialize/shutdown
+exchange passed, and the native Ubuntu build and virtual-display app launch
+passed. The adapter has not yet been exercised against the real server through
+the Tauri UI: Connect/Stop, diagnostics, hover, and completion remain
+unvalidated end to end. Workspace lifecycle, process-tree management, restart
+recovery, cross-file behavior, and the full Monaco feature set remain unproven.
 
 ### Validation delivery: headless CI and human review
 
@@ -161,8 +163,8 @@ and registers completion and hover only when advertised. Completion results
 preserve supported labels, kinds, insertion text/snippets, text edits,
 documentation, and incomplete-list state; the initialize request advertises
 snippet and documentation-format support, and malformed list items are ignored.
-It remains in progress until tested with the pinned server and native Tauri
-runtime; cancellation, disposal, and document-version handling also require
+It remains in progress until tested with the pinned server through the native
+Tauri UI; cancellation, disposal, and document-version handling also require
 end-to-end verification.
 
 Do not add `monaco-languageclient` `10.7.0`: the upstream compatibility table
