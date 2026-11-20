@@ -91,13 +91,16 @@ permission as a shortcut.
 The initial Rust components now provide bounded `Content-Length` framing and a
 child-process supervisor that invokes Java directly with `-jar`, pipes protocol
 stdin/stdout, drains stderr into a separately bounded diagnostic queue, and
-supports timed receive, exit polling, and termination. Narrow Tauri commands
-start, send, and stop one session; channels stream raw protocol responses and
-separate diagnostic bytes, and closing the window terminates the child. Startup
-resolves only the bundled `artifacts/language-server-all.jar`, verifies its
-pinned SHA-256 and regular-file status, then launches fixed `java -jar` with a
-cleared environment except for `PATH`. No executable or JAR path comes from the
-frontend.
+supports timed receive, exit polling, and termination. A dedicated stdin writer
+uses a bounded queue so command handlers never block while writing a full child
+pipe; queue saturation reports backpressure, and a writer failure terminates the
+session. Narrow Tauri commands start, send, and stop one session. IPC carries
+JSON-RPC bodies, while the frontend adapter removes/adds `Content-Length`
+framing at that boundary; stderr bytes remain separate. Closing the window
+terminates the child. Startup resolves only the bundled
+`artifacts/language-server-all.jar`, verifies its pinned SHA-256 and regular-file
+status, then launches fixed `java -jar` with a cleared environment except for
+`PATH`. No executable or JAR path comes from the frontend.
 
 The typed client uses the pinned `@tauri-apps/api` `2.12.5` package and Tauri
 Rust crate `2.12.7`; the GitHub advisory database reported no findings for the
@@ -112,15 +115,21 @@ still opens only one sample document; workspace tabs and filesystem lifecycle
 are not implemented. Protocol framing, document lifecycle/sync, completion
 normalization, request correlation, cancellation, timeout, write ordering, and
 closure have focused tests. Outbound JSON-RPC frames are serialized so edits
-reach the server in document-version order. An explicit Tauri exit channel now
-tears down editor providers and markers when the child stops unexpectedly and
-lets the UI offer a retry.
+reach the server in document-version order. Failed synchronous or asynchronous
+document-change sends fail the session and prevent later incremental updates
+from being sent against an unsynchronized version. An explicit Tauri exit
+channel tears down all editor providers and markers when the child stops
+unexpectedly and lets the UI offer a retry. Connect/stop operations are
+serialized, and the control remains disabled while shutdown is in progress.
 Startup checks for a process exit after both transport startup and document open,
 and the UI confirms the returned session is still active before marking it
 connected.
 Versioned `publishDiagnostics` notifications are ignored unless they match the
 current Monaco model version. Hover and completion responses are discarded if
-the model changes while their request is in flight.
+the model changes while their request is in flight. The frontend suite has
+25 passing tests, including IPC framing conversion and synchronous/asynchronous
+document-send failure handling; 17 Rust tests pass, including bounded writer
+backpressure and child termination.
 
 The JAR is intentionally not committed or downloaded automatically. The local
 experiment instructions in [the PoC README](../../poc/README.md) show how to

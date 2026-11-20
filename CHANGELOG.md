@@ -24,6 +24,66 @@ past outcomes. Each entry must include:
 Never put credentials, sensitive parameter values, or private environment
 contents in reports.
 
+## 2026-11-20 — Address LSP integration review findings
+
+### Tasks/status
+
+- **P1-01 in progress:** isolated child-stdin writes behind a bounded queue so
+  blocked writes cannot hold the session/process locks required for output
+  handling or process termination.
+- **P1-02 in progress:** corrected the JSON-RPC frame/body contract at the
+  Tauri IPC boundary. The adapter now strips framing before sending bodies and
+  restores framing for server responses.
+- **P1-03/P1-06 in progress:** failed document-change sends now stop the session
+  instead of allowing later deltas to use a server version known to be stale.
+  Added guards against overlapping UI connect/stop operations and ensured
+  unexpected-exit cleanup disposes completion as well as hover providers.
+
+### Work and decisions
+
+- `poc/src/lspProtocol.ts` exposes validated body extraction and frame
+  construction. `poc/src/lspTransport.ts` uses these at the Tauri IPC boundary;
+  JSON-RPC messages remain framed only on the process stdio side.
+- `poc/src-tauri/src/lsp_process.rs` moves writes to a dedicated writer thread
+  fed by a two-message bounded queue. `send()` is nonblocking and reports a
+  full queue as backpressure; writer failures are forwarded to
+  `lsp_ipc.rs`, which terminates the supervised session.
+- `poc/src/App.tsx` serializes connect and stop operations, disables the action
+  while connecting/stopping, and guards status updates by editor generation.
+- `poc/src/lspDocumentSync.ts` catches both synchronous and asynchronous
+  `didChange` failures, closes the synchronization session to further updates,
+  and notifies the editor session to stop the server. `poc/src/lspEditor.ts`
+  uses common cleanup for both hover and completion providers. No workspace or
+  multi-file UI was added.
+- Updated the [Phase 1 checkpoint](docs/plan/phase-1-language-server.md) and
+  [tracker](PLAN_TRACKING.md) to record the fixes and retain the outstanding
+  end-to-end/platform gaps.
+
+### Validation
+
+- `npm test` passed all 25 tests, including framed/body byte-preservation and
+  synchronous/asynchronous document-send failure tests.
+- `cargo test --locked` passed all 17 Rust tests, including bounded queue
+  backpressure and terminating a child that does not read stdin.
+- `npm run build` passed with the existing Monaco chunk-size warning.
+- `npm run tauri -- build --no-bundle` passed on Ubuntu 24.04 x86_64; the
+  existing Monaco chunk-size warning remains.
+- `npm run audit:npm` reported zero vulnerabilities. The staged v26.10.2 JAR
+  matched its pinned SHA-256.
+- Rust formatting and `git diff --check` passed. Cargo dependency audit was not
+  rerun because no dependencies changed; the three previously recorded RustSec
+  findings remain deferred for the internal PoC/Phase 1 only.
+- Actual server behavior through the Tauri UI was not exercised; macOS/Windows
+  were not built. Secret scanning and CodeQL remain pending for this increment.
+
+### Limitations and next steps
+
+- Exercise the pinned server through the native Tauri UI and verify connect,
+  stop, diagnostics, hover, completion, and failure/retry behavior.
+- Validate the app on macOS and Windows before any platform-support claim.
+- Keep P1 tasks in progress and P2 paused until the relevant integration and
+  workspace proofs are complete.
+
 ## 2026-11-20 — Pin current language-server and Tauri baseline
 
 ### Tasks/status
