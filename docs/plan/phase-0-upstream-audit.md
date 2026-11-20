@@ -20,9 +20,27 @@ Complete the upstream audit before treating architectural assumptions as proven:
 semantics and performs its edits. No frontend architecture decision should hide
 an unresolved semantic dependency.
 
-**Evidence status:** these are research tasks and candidate dependencies, not
-verified findings or version-pinned selections. The initial plan did not perform
-the live web/source audit.
+**Evidence status:** the initial plan did not perform the live audit. Follow-up
+research and decisions are recorded in
+[phase-0-audit-findings.md](phase-0-audit-findings.md) and
+[phase-0-capability-matrix.md](phase-0-capability-matrix.md); P0-07 and the phase
+exit are closed for the scoped prototype after the dependency risks and unused
+runtime candidates were explicitly deferred. These are not clean security
+results or release approvals; see the accepted-risk register in
+[phase-0-audit-findings.md](phase-0-audit-findings.md#accepted-and-deferred-risks).
+Registry attestations are also not independently verified. Re-audit and verify
+provenance before product use, broader distribution, or the platform gates
+listed there.
+
+## Current audit snapshot
+
+Initial verified findings for this phase now live in
+[phase-0-audit-findings.md](phase-0-audit-findings.md), and the current
+baseline selections plus the versioned capability matrix live in
+[phase-0-capability-matrix.md](phase-0-capability-matrix.md). Together they
+record the first round of upstream code/doc evidence, the selected compatibility
+line for P0-06/P0-08, and the remaining blockers without claiming phase
+completion.
 
 ## What can the language server actually provide?
 
@@ -99,7 +117,11 @@ Questions to settle:
 
 ### B. Official Nextflow editor integration
 
-Primary source: https://github.com/nextflow-io/vscode-nextflow
+Primary source: https://github.com/nextflow-io/vscode-language-nextflow
+
+_Note:_ the plan previously pointed at `nextflow-io/vscode-nextflow`, which now
+returns 404; current Nextflow documentation and the marketplace extension point
+to `nextflow-io/vscode-language-nextflow`.
 
 Inspect:
 

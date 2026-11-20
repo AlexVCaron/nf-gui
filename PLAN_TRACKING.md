@@ -3,8 +3,9 @@
 [Main plan](PLAN.md) · [Changelog](CHANGELOG.md)
 
 This is the authoritative task-status checklist; the phase documents remain the
-detailed requirements. Planning documentation is complete, but upstream research
-and implementation have not started. Writing a plan does not complete its tasks.
+detailed requirements. Planning documentation and the first upstream audit are
+complete. A limited prototype now exists, but product integration and the later
+implementation phases have not started. Writing a plan does not complete its tasks.
 
 ## Required reporting workflow
 
@@ -35,29 +36,32 @@ as the work. Follow the [main plan reporting requirements](PLAN.md#required-prog
   research caveats, and phases in the main plan and eight phase documents.
 - [x] DOC-02 — Add this tracker, the initial changelog, and required reporting
   links at the main and phase entry points.
+- [x] DOC-03 — Add a repository agent harness requiring concise chat summaries
+  with validation results, blockers, and next actions; keep summaries out of
+  separate files unless explicitly requested.
 
 ## Phase 0 — Upstream audit
 
 [Detailed requirements](docs/plan/phase-0-upstream-audit.md)
 
-- [ ] P0-01 — Audit language-server source, tests, capabilities, lifecycle, and
+- [x] P0-01 — Audit language-server source, tests, capabilities, lifecycle, and
   standard/custom protocols; cite documentation and implementation evidence.
-- [ ] P0-02 — Audit the official editor integration, server provisioning,
+- [x] P0-02 — Audit the official editor integration, server provisioning,
   configuration, custom requests, graph features, and compatibility assumptions.
-- [ ] P0-03 — Audit Nextflow parser/compiler APIs, source ranges, module resolution,
+- [x] P0-03 — Audit Nextflow parser/compiler APIs, source ranges, module resolution,
   language semantics, configuration resolution, and initialization side effects.
-- [ ] P0-04 — Verify parameter/schema dialects, nf-schema extensions, samplesheets,
+- [x] P0-04 — Verify parameter/schema dialects, nf-schema extensions, samplesheets,
   and the authority and limits of nf-core metadata.
-- [ ] P0-05 — Verify Tauri permissions/packaging and editor transport, worker,
+- [x] P0-05 — Verify Tauri permissions/packaging and editor transport, worker,
   CSP, WebView, and client compatibility requirements.
-- [ ] P0-06 — Produce the versioned capability matrix, including unsaved buffers,
+- [x] P0-06 — Produce the versioned capability matrix, including unsaved buffers,
   cancellation, stale results, cross-file resolution, and semantic/editing gaps.
-- [ ] P0-07 — Resolve candidate dependency choices and alternatives; record exact
+- [x] P0-07 — Resolve candidate dependency choices and alternatives; record exact
   versions, licenses, advisories, provenance, transitive exposure, and runtime
   versus development roles.
-- [ ] P0-08 — Select compatible Java/server/parser/Nextflow combinations and
+- [x] P0-08 — Select compatible Java/server/parser/Nextflow combinations and
   document how each initial feature obtains semantics and performs edits.
-- [ ] P0-EXIT — Verify the phase 0 exit criterion with linked audit evidence.
+- [x] P0-EXIT — Verify the phase 0 exit criterion with linked audit evidence.
 
 ## Phase 1 — Language-server integration
 
@@ -209,3 +213,14 @@ Tasks without a row and with an unchecked box are not started.
 |---|---|---|---|
 | DOC-01 | Complete | [Main plan](PLAN.md), linked phase documents, and commit `a25b059`; original research limitation retained. | Begin P0-01; upstream claims remain unverified. |
 | DOC-02 | Complete | This checklist, [initial changelog and validation outcomes](CHANGELOG.md#2026-09-18--planning-foundation), and reporting references in all phases; secret/whitespace and duplicate-ID checks passed, links manually reviewed. | Automated review unavailable (model configuration); CodeQL skipped documentation-only changes. Use both reporting files for subsequent work. |
+| DOC-03 | Complete | Root [agent handoff requirements](AGENTS.md) require a concise final chat summary and explicitly prohibit a separate summary file unless requested; [PLAN.md](PLAN.md#required-progress-reporting) and [README.md](README.md) link the convention. | Agents must follow the repository harness; report summaries, actual validation, blockers, and next actions directly in chat. |
+| P0-01, P0-02 | Complete | [Phase 0 audit findings](docs/plan/phase-0-audit-findings.md#p0-01--nextflow-language-server) record selected `v26.04.4` source/test evidence, capability/protocol behavior, narrow incomplete-source coverage, entry-only cancellation checks, debounce/freshness limits, and error handling. Newer-main tests are distinguished from the selected artifact. Official editor lifecycle is pinned at `1a28fdb`; no child-process crash/restart-and-resync test was found. Source/test inspection only; upstream suites were not run. | Phase 1 must test supervisor restart, buffer resynchronization, diagnostics recovery, and cancellation behavior end to end. |
+| P0-03, P0-04 | Complete | [Phase 0 audit findings](docs/plan/phase-0-audit-findings.md#p0-03--nextflow-parsercompiler-semantics) document the pinned parse/analyze behavior, source-range/API limitations, opaque plugin placeholders, remote module side effects, and lack of effective configuration resolution. The P0-04 schema UX decision specifies provenance/dialect display, separates declared data from validation/effective values, and records the nf-schema/nf-core compatibility discrepancy. | Exact source-edit ranges/round trips are Phase 2/3 proofs; effective configuration resolution and any schema validation require separate, explicit support and authorization. |
+| P0-05 | Complete | [Phase 0 audit findings](docs/plan/phase-0-audit-findings.md#p0-05--desktopeditor-infrastructure) document Tauri permissions/CSP/resources/sidecars/channels, editor compatibility candidates, transport limitations, and the original Tauri `2.9.2` baseline. The current Phase 1 baseline is Tauri `2.12.7`, with the direct GHSA-7gmj-67g7-phm9 version threshold met; Linux build passed, while macOS/Windows remain unvalidated. | Prove packaged WebView workers/CSP and IPC-to-stdio transport; do not claim macOS/Windows support before platform builds and runtime tests. |
+| P0-07 | Complete for scoped non-shipping PoC; three RustSec findings deferred | The original [P0-07 snapshot](docs/plan/phase-0-audit-findings.md#p0-07-candidate-dependency-and-supply-chain-snapshot-2026-11-18) is historical. The [2026-11-20 re-audit](docs/plan/phase-0-audit-findings.md#implementation-dependency-re-audit--2026-11-20) records updated Tauri `2.12.7`, build helper `2.7.6`, API `2.12.5`, CLI `2.12.6`, clean npm audit, and three denied Cargo advisories (`chrono`, `proc-macro-error`, `glib`). Target paths were checked; the existing risk deferral is limited to internal PoC/Phase 1. The previous Tauri GHSA threshold is met; nf-schema remains unstaged. | Keep non-shipping scope. Resolve or obtain a new explicit risk disposition for the Cargo findings before distribution; verify nf-schema before enabling it. |
+| P0-06, P0-08 | Complete | [Phase 0 capability matrix and baseline selections](docs/plan/phase-0-capability-matrix.md) retain the versioned server feature matrix and semantic/edit-path mapping; current integration pins are server JAR v26.10.2 and Tauri 2.12.7. The historical language-server audit baseline remains v26.04.4. | Preserve this version distinction; update dependency security status through reopened P0-07 and validate server behavior in P1. |
+| P0-EXIT | Complete for scoped non-shipping PoC | The [capability matrix](docs/plan/phase-0-capability-matrix.md) maps feature semantics and current integration pins. The [2026-11-20 re-audit](docs/plan/phase-0-audit-findings.md#implementation-dependency-re-audit--2026-11-20) records the current lockfile, three RustSec findings, and their limited existing PoC/Phase 1 deferral. This is not a clean audit or release approval. | Re-open before broader distribution, platform-support claims, enabling nf-schema, or any dependency/security change that alters the risk disposition. |
+| P1-01 | In progress | [Phase 1 integration spike](docs/plan/phase-1-language-server.md#initial-integration-spike-and-deferred-risk-boundary) selects Rust-supervised stdio LSP. `poc/src-tauri/src/lsp_framing.rs` bounds Content-Length frames; `lsp_process.rs` invokes fixed `java -jar`, separates stdout/stderr, and sends bodies through a bounded stdin-writer queue so blocked writes do not hold session/process locks. Queue saturation applies backpressure; writer errors reach the supervisor. Tauri commands remain session-scoped and shutdown-on-window-close is retained. The artifact resolver checks the pinned JAR SHA-256. Seventeen Rust tests pass, including a child that does not read stdin and is promptly terminated. The pinned JAR digest and direct initialize/shutdown/exit were previously verified; `npm run tauri -- build --no-bundle` now passes on Ubuntu 24.04 x86_64. | Exercise the real JAR through Tauri IPC and the UI, including Connect/Stop and failure/restart behavior; verify macOS/Windows separately. |
+| P1-02 | In progress | [Monaco bridge compatibility checkpoint](docs/plan/phase-1-language-server.md#p1-02--monaco-bridge-compatibility-checkpoint) uses a project-owned adapter. It negotiates initialize, maps diagnostics/hover/capability-gated completion, normalizes completion responses, advertises snippets, and rejects stale results. The IPC boundary now converts framed RPC messages to raw JSON bodies and reconstructs frames for received bodies; a regression test checks byte-preserving round trips. Connect/stop operations are serialized and status updates are generation-guarded. Twenty-five frontend tests pass; the real-server Tauri UI behavior remains untested end to end. | Exercise the adapter against the pinned server through Tauri; verify hover, completion, diagnostics, version synchronization, cancellation, and disposal. Keep Actions headless; use remote desktop or a local native build only for optional human review. |
+| P1-03 | In progress | `poc/src/lspDocumentSync.ts` maintains one model per URI, sends didOpen/didChange/didClose, enforces increasing versions, selects full vs incremental sync, and rejects duplicate live URIs. Synchronous encode/notify throws and rejected didChange sends now fail the session, dispose listeners, stop further deltas, and trigger transport shutdown rather than leave the server permanently stale. Tests cover both failure modes. The UI still opens only its sample file. | Add and exercise actual multi-document UI/workspace flows; validate synchronization and cross-file behavior against the pinned server in native Tauri. Preserve dirty buffers and defer external file/rename/delete lifecycle handling to P1-05. |
+| P1-06 | In progress | Review fixes harden version mismatch and restart handling: failed document updates now terminate the session instead of continuing with stale server state; common cleanup disposes hover and completion providers, diagnostics, and document listeners. Connect/stop is guarded against overlapping operations. Twenty-five frontend tests and 17 Rust tests pass; the Ubuntu native build passes. No end-to-end Tauri/server crash-recovery run has been performed. | Validate out-of-sync failure, process exit, retry, cancellation, and provider disposal in the real Tauri UI; editing must remain available when the server is stopped. |

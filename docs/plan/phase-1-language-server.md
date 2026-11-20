@@ -78,3 +78,127 @@ The text editor must remain usable when semantic analysis fails.
 Apply the workspace trust, process supervision, protocol limits, logging, and
 failure-recovery requirements from
 [phase 5](phase-5-compatibility-packaging.md) from the beginning.
+
+### Initial integration spike and deferred-risk boundary
+
+P1-01 is the first active implementation task. The selected shape is a
+Rust-supervised Nextflow language-server child process communicating over
+stdio, with narrowly scoped Tauri commands/channels to the frontend. The server
+uses standard LSP framing; do not introduce a frontend-accessible localhost
+server, shell invocation, arbitrary executable path, or general filesystem
+permission as a shortcut.
+
+The initial Rust components now provide bounded `Content-Length` framing and a
+child-process supervisor that invokes Java directly with `-jar`, pipes protocol
+stdin/stdout, drains stderr into a separately bounded diagnostic queue, and
+supports timed receive, exit polling, and termination. A dedicated stdin writer
+uses a bounded queue so command handlers never block while writing a full child
+pipe; queue saturation reports backpressure, and a writer failure terminates the
+session. Narrow Tauri commands start, send, and stop one session. IPC carries
+JSON-RPC bodies, while the frontend adapter removes/adds `Content-Length`
+framing at that boundary; stderr bytes remain separate. Closing the window
+terminates the child. Startup resolves only the bundled
+`artifacts/language-server-all.jar`, verifies its pinned SHA-256 and regular-file
+status, then launches fixed `java -jar` with a cleared environment except for
+`PATH`. No executable or JAR path comes from the frontend.
+
+The typed client uses the pinned `@tauri-apps/api` `2.12.5` package and Tauri
+Rust crate `2.12.7`; the GitHub advisory database reported no findings for the
+updated API, CLI, and Rust crates. The API-to-Rust pairing has now passed a
+native Linux build. The PoC UI has explicit connect/stop controls, and the
+editor session owns an authoritative model registry keyed by document URI. It
+opens each model once, synchronizes advertised full or incremental changes with
+that model's version, closes only the matching model, and routes diagnostics,
+hover, and completion to registered models. Reopening one model is idempotent;
+opening a different model at an already-open URI is rejected. The current UI
+still opens only one sample document; workspace tabs and filesystem lifecycle
+are not implemented. Protocol framing, document lifecycle/sync, completion
+normalization, request correlation, cancellation, timeout, write ordering, and
+closure have focused tests. Outbound JSON-RPC frames are serialized so edits
+reach the server in document-version order. Failed synchronous or asynchronous
+document-change sends fail the session and prevent later incremental updates
+from being sent against an unsynchronized version. An explicit Tauri exit
+channel tears down all editor providers and markers when the child stops
+unexpectedly and lets the UI offer a retry. Connect/stop operations are
+serialized, and the control remains disabled while shutdown is in progress.
+Startup checks for a process exit after both transport startup and document open,
+and the UI confirms the returned session is still active before marking it
+connected.
+Versioned `publishDiagnostics` notifications are ignored unless they match the
+current Monaco model version. Hover and completion responses are discarded if
+the model changes while their request is in flight. The frontend suite has
+25 passing tests, including IPC framing conversion and synchronous/asynchronous
+document-send failure handling; 17 Rust tests pass, including bounded writer
+backpressure and child termination.
+
+The JAR is intentionally not committed or downloaded automatically. The local
+experiment instructions in [the PoC README](../../poc/README.md) show how to
+stage the already-pinned release for packaging. A direct JAR initialize/shutdown
+exchange passed, and the native Ubuntu build and virtual-display app launch
+passed. The adapter has not yet been exercised against the real server through
+the Tauri UI: Connect/Stop, diagnostics, hover, and completion remain
+unvalidated end to end. Workspace lifecycle, process-tree management, restart
+recovery, cross-file behavior, and the full Monaco feature set remain unproven.
+
+### Validation delivery: headless CI and human review
+
+Plan repeatable, headless validation in GitHub Actions for frontend tests/build,
+Rust tests with Tauri's native Linux prerequisites, and integrity checks for
+the pinned server artifact. A real-server integration job should download only
+the exact pinned release, verify its SHA-256, and test the protocol lifecycle;
+do not commit the JAR or bypass its runtime verification.
+
+Interactive review is a separate, optional layer. Once the editor bridge is
+usable, reviewers can use a native desktop build or a Codespace configured with
+a remote desktop (for example, VNC/noVNC) to try the connect/diagnostics/hover
+flow. Forwarding only the Vite browser page is not sufficient to validate Tauri
+IPC. Prefer Actions artifacts for local desktop testing if remote display adds
+more setup than review value. Neither a Codespace nor a successful package build
+replaces the headless tests.
+
+### P1-02 — Monaco bridge compatibility checkpoint
+
+The current frontend uses `monaco-editor` `0.57.0` directly, without VS Code
+services. Monaco's public `languages` API exposes providers for completion,
+hover, definitions, references, rename, and document symbols, and its editor
+API exposes model markers for diagnostics. Tauri 2's IPC channels support
+ordered Rust-to-frontend message delivery. These APIs allow a small
+project-owned adapter between the Rust LSP process and Monaco without exposing
+a local network port.
+
+The PoC now prototypes that adapter for one sample buffer: it negotiates server
+capabilities, synchronizes edits, maps published diagnostics to Monaco markers,
+and registers completion and hover only when advertised. Completion results
+preserve supported labels, kinds, insertion text/snippets, text edits,
+documentation, and incomplete-list state; the initialize request advertises
+snippet and documentation-format support, and malformed list items are ignored.
+It remains in progress until tested with the pinned server through the native
+Tauri UI; cancellation, disposal, and document-version handling also require
+end-to-end verification.
+
+Do not add `monaco-languageclient` `10.7.0`: the upstream compatibility table
+pairs that release with Monaco `0.55.1`. The same table lists `11.0.2` with
+Monaco `0.56.0` and labels `11.0.3` (the row aligned with Monaco `0.57.0`) as
+unreleased. Therefore no released exact match for the current editor is
+established by that table. The project-owned Monaco-provider adapter is the
+provisional smallest bridge candidate; keep P1-02 in progress until a prototype
+proves diagnostics and at least one request/response feature against the
+selected server, with protocol ordering, cancellation, disposal, and editor
+version synchronization tests. Reassess the library option if a compatible
+release is published and audited.
+
+Evidence:
+
+- [Monaco language API](https://microsoft.github.io/monaco-editor/typedoc/modules/editor_editor_api.languages.html)
+- [monaco-languageclient compatibility history](https://github.com/TypeFox/monaco-languageclient/blob/main/docs/versions-and-history.md)
+- [Tauri 2 JavaScript IPC channel API](https://v2.tauri.app/reference/javascript/api/namespacecore/)
+
+The user accepted the currently documented npm/RustSec findings for internal
+PoC/Phase 1 work only. This does not waive Phase 5 controls or imply a clean
+audit. Keep the npm dev server loopback-only, retain the Tauri Windows/Android
+upgrade gate, and re-audit any changed dependency graph. Before a release or
+broader distribution, re-open P0-07 and disposition every risk in the
+[Phase 0 register](phase-0-audit-findings.md#accepted-and-deferred-risks).
+The nf-schema blob and Monaco language-client bridge remain deferred and must
+not be downloaded, enabled, or treated as selected dependencies without their
+documented provenance/advisory review.
