@@ -148,3 +148,45 @@ test("disposes all model listeners and rejects later opens", async () => {
   assert.equal(sync.getOpenModels().length, 0);
   await assert.rejects(sync.open(model), /disposed/);
 });
+
+test("reports synchronous change-notification failures and stops sending deltas", async () => {
+  const failures: unknown[] = [];
+  const messages: string[] = [];
+  const sync = new LspDocumentSync((method) => {
+    messages.push(method);
+    if (method === "textDocument/didChange") throw new Error("message too large");
+    return Promise.resolve();
+  }, 2, (error) => failures.push(error));
+  const model = new FakeModel({ toString: () => "file:///workspace/main.nf" }, "main");
+  await sync.open(model);
+
+  model.change("first change", [rangedChange(4, "!")]);
+  model.change("second change", [rangedChange(5, "!")]);
+  assert.deepEqual(messages, ["textDocument/didOpen", "textDocument/didChange"]);
+  assert.equal(failures.length, 1);
+  assert.match(String(failures[0]), /message too large/);
+  assert.equal(model.listenerCount, 0);
+  sync.dispose();
+});
+
+test("reports rejected change-notification promises and stops later deltas", async () => {
+  const failures: unknown[] = [];
+  const messages: string[] = [];
+  const sync = new LspDocumentSync((method) => {
+    messages.push(method);
+    return method === "textDocument/didChange"
+      ? Promise.reject(new Error("IPC send failed"))
+      : Promise.resolve();
+  }, 2, (error) => failures.push(error));
+  const model = new FakeModel({ toString: () => "file:///workspace/main.nf" }, "main");
+  await sync.open(model);
+
+  model.change("first change", [rangedChange(4, "!")]);
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  model.change("second change", [rangedChange(5, "!")]);
+  assert.deepEqual(messages, ["textDocument/didOpen", "textDocument/didChange"]);
+  assert.equal(failures.length, 1);
+  assert.match(String(failures[0]), /IPC send failed/);
+  assert.equal(model.listenerCount, 0);
+  sync.dispose();
+});

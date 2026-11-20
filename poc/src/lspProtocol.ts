@@ -21,6 +21,10 @@ type PendingRequest = {
 
 export function encodeLspMessage(message: JsonRpcMessage): Uint8Array {
   const body = encoder.encode(JSON.stringify(message));
+  return frameLspBody(body);
+}
+
+export function frameLspBody(body: Uint8Array): Uint8Array {
   if (body.byteLength > MAX_LSP_BODY_BYTES) {
     throw new Error("LSP message exceeds the configured size limit");
   }
@@ -33,6 +37,17 @@ export function encodeLspMessage(message: JsonRpcMessage): Uint8Array {
 }
 
 export function decodeLspMessage(frame: Uint8Array): JsonRpcMessage {
+  const body = decodeLspBody(frame);
+  const message: unknown = JSON.parse(decoder.decode(body));
+  if (!message || typeof message !== "object" || Array.isArray(message)) {
+    throw new Error("Invalid JSON-RPC message");
+  }
+  const rpc = message as JsonRpcMessage;
+  if (rpc.jsonrpc !== "2.0") throw new Error("Unsupported JSON-RPC version");
+  return rpc;
+}
+
+export function decodeLspBody(frame: Uint8Array): Uint8Array {
   const delimiter = findHeaderDelimiter(frame);
   if (delimiter < 0 || delimiter > 8 * 1024) {
     throw new Error("Invalid LSP message header");
@@ -59,13 +74,7 @@ export function decodeLspMessage(frame: Uint8Array): JsonRpcMessage {
     throw new Error("LSP message body length does not match Content-Length");
   }
 
-  const message: unknown = JSON.parse(decoder.decode(frame.subarray(bodyStart)));
-  if (!message || typeof message !== "object" || Array.isArray(message)) {
-    throw new Error("Invalid JSON-RPC message");
-  }
-  const rpc = message as JsonRpcMessage;
-  if (rpc.jsonrpc !== "2.0") throw new Error("Unsupported JSON-RPC version");
-  return rpc;
+  return frame.slice(bodyStart);
 }
 
 export class LspRpcClient {

@@ -45,20 +45,37 @@ export async function connectLspEditor(
   let removeDiagnosticListener: () => void = () => {};
   let documents: LspDocumentSync | undefined;
   let hoverProvider: monaco.IDisposable | undefined;
+  let completionProvider: monaco.IDisposable | undefined;
   let stopped = false;
   let stopping = false;
+  let exitReported = false;
   const removeDiagnostics = (target: monaco.editor.ITextModel) =>
     monaco.editor.setModelMarkers(target, "nextflow-lsp", []);
   const cleanup = () => {
     if (stopped) return;
     stopped = true;
     hoverProvider?.dispose();
+    hoverProvider = undefined;
+    completionProvider?.dispose();
+    completionProvider = undefined;
     removeDiagnosticListener();
     for (const openModel of documents?.getOpenModels() ?? [model]) {
       removeDiagnostics(openModel as monaco.editor.ITextModel);
     }
     documents?.dispose();
     client?.close();
+  };
+  const reportExit = (reason: string) => {
+    if (exitReported) return;
+    exitReported = true;
+    cleanup();
+    onExit(reason);
+  };
+  const failSession = (error: unknown) => {
+    if (stopped || stopping) return;
+    const reason = error instanceof Error ? error.message : "Document synchronization failed";
+    cleanup();
+    void transport?.stop().catch(() => undefined).finally(() => reportExit(reason));
   };
 
   try {
@@ -67,8 +84,7 @@ export async function connectLspEditor(
       onStderr,
       (reason) => {
         if (stopping) return;
-        cleanup();
-        onExit(reason);
+        reportExit(reason);
       },
     );
     if (stopped) throw new Error("Language server exited during startup");
@@ -130,6 +146,7 @@ export async function connectLspEditor(
     documents = new LspDocumentSync(
       (method, params) => client!.notify(method, params),
       changeKind,
+      failSession,
     );
     await documents.open(model);
     if (stopped) throw new Error("Language server exited during startup");
@@ -166,7 +183,7 @@ export async function connectLspEditor(
       : undefined;
 
     const completionCapability = capabilities.completionProvider;
-    const completionProvider = completionCapability
+    completionProvider = completionCapability
       ? monaco.languages.registerCompletionItemProvider("nextflow", {
           triggerCharacters:
             typeof completionCapability === "object"
@@ -233,6 +250,7 @@ export async function connectLspEditor(
         hoverProvider?.dispose();
         hoverProvider = undefined;
         completionProvider?.dispose();
+        completionProvider = undefined;
         removeDiagnosticListener();
         removeDiagnosticListener = () => undefined;
         for (const openModel of documents?.getOpenModels() ?? [model]) {

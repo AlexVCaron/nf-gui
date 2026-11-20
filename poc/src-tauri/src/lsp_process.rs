@@ -1,4 +1,4 @@
-use crate::lsp_framing::{read_message, write_message};
+use crate::lsp_framing::{MAX_BODY_BYTES, read_message, write_message};
 use std::io::{self, BufReader, Read};
 use std::path::Path;
 use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
@@ -6,13 +6,15 @@ use std::sync::mpsc::{self, Receiver, SyncSender, TrySendError};
 use std::thread;
 use std::time::Duration;
 
+const INPUT_QUEUE_CAPACITY: usize = 2;
 const STDERR_CHUNK_BYTES: usize = 4096;
 const STDERR_CHANNEL_CAPACITY: usize = 16;
 const MESSAGE_CHANNEL_CAPACITY: usize = 32;
 
 pub struct LspProcess {
     child: Child,
-    stdin: ChildStdin,
+    input: SyncSender<Vec<u8>>,
+    write_errors: Receiver<io::Error>,
     messages: Receiver<io::Result<Vec<u8>>>,
     stderr: Receiver<Vec<u8>>,
 }
@@ -46,6 +48,16 @@ impl LspProcess {
             return fail_spawn(&mut child, "failed to capture language server stderr");
         };
 
+        let (input, input_receiver) = mpsc::sync_channel(INPUT_QUEUE_CAPACITY);
+        let (write_error_sender, write_errors) = mpsc::sync_channel(1);
+        if let Err(error) = thread::Builder::new()
+            .name("lsp-stdin".into())
+            .spawn(move || write_messages(stdin, input_receiver, write_error_sender))
+        {
+            let _ = terminate_child(&mut child);
+            return Err(error);
+        }
+
         let (message_sender, messages) = mpsc::sync_channel(MESSAGE_CHANNEL_CAPACITY);
         if let Err(error) = thread::Builder::new()
             .name("lsp-stdout".into())
@@ -66,14 +78,36 @@ impl LspProcess {
 
         Ok(Self {
             child,
-            stdin,
+            input,
+            write_errors,
             messages,
             stderr,
         })
     }
 
     pub fn send(&mut self, message: &[u8]) -> io::Result<()> {
-        write_message(&mut self.stdin, message)
+        if message.len() > MAX_BODY_BYTES {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "LSP message exceeds the configured size limit",
+            ));
+        }
+        self.input
+            .try_send(message.to_vec())
+            .map_err(|error| match error {
+                TrySendError::Full(_) => io::Error::new(
+                    io::ErrorKind::WouldBlock,
+                    "language server input queue is full",
+                ),
+                TrySendError::Disconnected(_) => io::Error::new(
+                    io::ErrorKind::BrokenPipe,
+                    "language server input worker stopped",
+                ),
+            })
+    }
+
+    pub fn try_receive_write_error(&self) -> Option<io::Error> {
+        self.write_errors.try_recv().ok()
     }
 
     pub fn receive(&self, timeout: Duration) -> io::Result<Option<Vec<u8>>> {
@@ -104,6 +138,19 @@ impl LspProcess {
 impl Drop for LspProcess {
     fn drop(&mut self) {
         let _ = terminate_child(&mut self.child);
+    }
+}
+
+fn write_messages(
+    mut stdin: ChildStdin,
+    messages: Receiver<Vec<u8>>,
+    errors: SyncSender<io::Error>,
+) {
+    while let Ok(message) = messages.recv() {
+        if let Err(error) = write_message(&mut stdin, &message) {
+            let _ = errors.try_send(error);
+            break;
+        }
     }
 }
 
@@ -199,6 +246,34 @@ mod tests {
             .receive(Duration::from_millis(1))
             .expect_err("no child output should arrive before a message is sent");
         assert_eq!(error.kind(), ErrorKind::TimedOut);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn blocked_child_stdin_does_not_block_send_or_termination() {
+        let mut command = Command::new("sleep");
+        command.arg("30");
+        let mut process = LspProcess::spawn(&mut command).unwrap();
+        let message = vec![b'x'; 1024 * 1024];
+
+        let mut queue_full = false;
+        for _ in 0..16 {
+            match process.send(&message) {
+                Ok(()) => {}
+                Err(error) if error.kind() == ErrorKind::WouldBlock => {
+                    queue_full = true;
+                    break;
+                }
+                Err(error) => panic!("unexpected send error: {error}"),
+            }
+        }
+        assert!(
+            queue_full,
+            "the bounded input queue should apply backpressure"
+        );
+
+        let status = process.terminate().unwrap();
+        assert!(!status.success());
     }
 
     #[test]

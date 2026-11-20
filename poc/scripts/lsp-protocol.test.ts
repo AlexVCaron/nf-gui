@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  decodeLspBody,
   decodeLspMessage,
   encodeLspMessage,
+  frameLspBody,
   LspRpcClient,
 } from "../src/lspProtocol.ts";
 
@@ -18,6 +20,17 @@ function frame(message: unknown): Uint8Array {
 test("encodes and decodes UTF-8 JSON-RPC messages by byte length", () => {
   const message = { jsonrpc: "2.0", method: "test", params: { text: "é" } } as const;
   assert.deepEqual(decodeLspMessage(encodeLspMessage(message)), message);
+});
+
+test("converts framed RPC messages to IPC bodies and back without changing bytes", () => {
+  const body = new TextEncoder().encode(JSON.stringify({
+    jsonrpc: "2.0",
+    method: "initialize",
+    params: { clientInfo: { name: "nf-gui" } },
+  }));
+  const frame = encodeLspMessage(JSON.parse(new TextDecoder().decode(body)));
+  assert.deepEqual(decodeLspBody(frame), body);
+  assert.deepEqual(frameLspBody(decodeLspBody(frame)), frame);
 });
 
 test("rejects malformed, duplicate, mismatched and non-JSON-RPC frames", () => {

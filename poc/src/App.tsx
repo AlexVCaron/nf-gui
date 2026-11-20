@@ -87,9 +87,10 @@ function App() {
   const editorInstance = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const lspSession = useRef<LspEditorSession | null>(null);
   const editorGeneration = useRef(0);
+  const serverOperationInFlight = useRef(false);
   const [hasEdits, setHasEdits] = useState(false);
   const [languageServerStatus, setLanguageServerStatus] = useState<
-    "disconnected" | "connecting" | "connected" | "error"
+    "disconnected" | "connecting" | "connected" | "stopping" | "error"
   >("disconnected");
   const [languageServerError, setLanguageServerError] = useState("");
 
@@ -130,43 +131,53 @@ function App() {
   }, []);
 
   async function toggleLanguageServer() {
-    if (lspSession.current) {
-      const session = lspSession.current;
-      lspSession.current = null;
-      await session.stop();
-      setLanguageServerStatus("disconnected");
-      setLanguageServerError("");
-      return;
-    }
-
-    const model = editorInstance.current?.getModel();
-    if (!model) return;
+    if (serverOperationInFlight.current) return;
+    serverOperationInFlight.current = true;
     const generation = editorGeneration.current;
-    setLanguageServerStatus("connecting");
-    setLanguageServerError("");
+
     try {
-      const session = await connectLspEditor(
-        model,
-        () => undefined,
-        (reason) => {
-          if (generation !== editorGeneration.current) return;
-          lspSession.current = null;
-          setLanguageServerStatus("error");
-          setLanguageServerError(`Language server stopped: ${reason}`);
-        },
-      );
-      if (generation !== editorGeneration.current || !session.isActive) {
+      if (lspSession.current) {
+        const session = lspSession.current;
+        lspSession.current = null;
+        setLanguageServerStatus("stopping");
         await session.stop();
+        if (generation === editorGeneration.current) {
+          setLanguageServerStatus("disconnected");
+          setLanguageServerError("");
+        }
         return;
       }
-      lspSession.current = session;
-      setLanguageServerStatus("connected");
-    } catch (error) {
-      if (generation !== editorGeneration.current) return;
-      setLanguageServerStatus("error");
-      setLanguageServerError(
-        error instanceof Error ? error.message : "Could not start the language server",
-      );
+
+      const model = editorInstance.current?.getModel();
+      if (!model) return;
+      setLanguageServerStatus("connecting");
+      setLanguageServerError("");
+      try {
+        const session = await connectLspEditor(
+          model,
+          () => undefined,
+          (reason) => {
+            if (generation !== editorGeneration.current) return;
+            lspSession.current = null;
+            setLanguageServerStatus("error");
+            setLanguageServerError(`Language server stopped: ${reason}`);
+          },
+        );
+        if (generation !== editorGeneration.current || !session.isActive) {
+          await session.stop();
+          return;
+        }
+        lspSession.current = session;
+        setLanguageServerStatus("connected");
+      } catch (error) {
+        if (generation !== editorGeneration.current) return;
+        setLanguageServerStatus("error");
+        setLanguageServerError(
+          error instanceof Error ? error.message : "Could not start the language server",
+        );
+      }
+    } finally {
+      serverOperationInFlight.current = false;
     }
   }
 
@@ -195,16 +206,20 @@ function App() {
            className="language-server-button"
            type="button"
            onClick={() => void toggleLanguageServer()}
-           disabled={languageServerStatus === "connecting"}
+           disabled={
+             languageServerStatus === "connecting" || languageServerStatus === "stopping"
+           }
            title={languageServerError || undefined}
          >
            {languageServerStatus === "connecting"
              ? "Connecting…"
-             : languageServerStatus === "connected"
-               ? "Stop language server"
-               : languageServerStatus === "error"
-                 ? "Retry language server"
-                 : "Connect language server"}
+             : languageServerStatus === "stopping"
+               ? "Stopping…"
+               : languageServerStatus === "connected"
+                 ? "Stop language server"
+                 : languageServerStatus === "error"
+                   ? "Retry language server"
+                   : "Connect language server"}
          </button>
          <button className="reset-button" type="button" onClick={resetSample}>
            Reset sample

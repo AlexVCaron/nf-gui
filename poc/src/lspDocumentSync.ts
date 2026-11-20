@@ -28,15 +28,19 @@ type OpenDocument = {
 export class LspDocumentSync {
   private readonly documents = new Map<string, OpenDocument>();
   private disposed = false;
+  private failed = false;
   private readonly notify: (method: string, params: unknown) => Promise<void>;
   private readonly changeKind: number;
+  private readonly onError: (error: unknown) => void;
 
   constructor(
     notify: (method: string, params: unknown) => Promise<void>,
     changeKind: number,
+    onError: (error: unknown) => void = () => undefined,
   ) {
     this.notify = notify;
     this.changeKind = changeKind;
+    this.onError = onError;
   }
 
   getModel(uri: string): SyncableTextModel | undefined {
@@ -49,6 +53,7 @@ export class LspDocumentSync {
 
   async open(model: SyncableTextModel): Promise<void> {
     if (this.disposed) throw new Error("Document synchronization is disposed");
+    if (this.failed) throw new Error("Document synchronization is inactive");
     const uri = model.uri.toString();
     const existing = this.documents.get(uri);
     if (existing) {
@@ -62,6 +67,7 @@ export class LspDocumentSync {
       subscription: { dispose: () => undefined },
     };
     document.subscription = model.onDidChangeContent(({ changes }) => {
+      if (this.failed || this.disposed) return;
       const version = model.getVersionId();
       if (version <= document.lastVersion) return;
       document.lastVersion = version;
@@ -87,10 +93,14 @@ export class LspDocumentSync {
               rangeLength,
               text,
             }));
-      void this.notify("textDocument/didChange", {
-        textDocument: { uri, version },
-        contentChanges,
-      }).catch(() => undefined);
+      try {
+        void this.notify("textDocument/didChange", {
+          textDocument: { uri, version },
+          contentChanges,
+        }).catch((error: unknown) => this.handleFailure(error));
+      } catch (error) {
+        this.handleFailure(error);
+      }
     });
     this.documents.set(uri, document);
 
@@ -125,5 +135,12 @@ export class LspDocumentSync {
     this.disposed = true;
     for (const { subscription } of this.documents.values()) subscription.dispose();
     this.documents.clear();
+  }
+
+  private handleFailure(error: unknown): void {
+    if (this.failed || this.disposed) return;
+    this.failed = true;
+    for (const { subscription } of this.documents.values()) subscription.dispose();
+    this.onError(error);
   }
 }

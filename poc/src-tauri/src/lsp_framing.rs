@@ -1,7 +1,7 @@
 use std::io::{self, BufRead, Write};
 
 const MAX_HEADER_BYTES: usize = 8 * 1024;
-const MAX_BODY_BYTES: usize = 8 * 1024 * 1024;
+pub const MAX_BODY_BYTES: usize = 8 * 1024 * 1024;
 
 pub fn read_message<R: BufRead>(reader: &mut R) -> io::Result<Option<Vec<u8>>> {
     let Some(header) = read_header(reader)? else {

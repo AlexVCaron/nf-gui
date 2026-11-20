@@ -149,6 +149,16 @@ fn stream_process(
 ) {
     let mut exit_reason = "language server stream stopped".to_owned();
     loop {
+        let write_error = process
+            .lock()
+            .ok()
+            .and_then(|process| process.try_receive_write_error());
+        if let Some(error) = write_error {
+            exit_reason = format!("language server stdin failed: {error}");
+            let _ = on_stderr.send(InvokeResponseBody::Raw(exit_reason.as_bytes().to_vec()));
+            break;
+        }
+
         let message = {
             let Ok(process) = process.lock() else {
                 break;
