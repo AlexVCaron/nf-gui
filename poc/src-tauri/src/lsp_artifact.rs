@@ -5,7 +5,7 @@ use std::path::Path;
 
 pub const LANGUAGE_SERVER_JAR: &str = "language-server-all.jar";
 const LANGUAGE_SERVER_SHA256: &str =
-    "e1c5da90c7f0565ba9e64ac3c5b58f1215e315d6bfe4414d62ff2d02749e8887";
+    "20326778651c5c5e5f40a570c2275d1f520419941624386a2b1a111f1dfa4b26";
 const MAX_LANGUAGE_SERVER_BYTES: u64 = 128 * 1024 * 1024;
 
 pub fn verify_language_server(path: &Path) -> io::Result<()> {
@@ -131,7 +131,7 @@ mod tests {
     fn pins_expected_artifact_hash_and_size_limit() {
         assert_eq!(
             LANGUAGE_SERVER_SHA256,
-            "e1c5da90c7f0565ba9e64ac3c5b58f1215e315d6bfe4414d62ff2d02749e8887"
+            "20326778651c5c5e5f40a570c2275d1f520419941624386a2b1a111f1dfa4b26"
         );
         assert_eq!(MAX_LANGUAGE_SERVER_BYTES, 128 * 1024 * 1024);
     }

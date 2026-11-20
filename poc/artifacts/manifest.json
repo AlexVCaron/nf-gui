@@ -3,11 +3,11 @@
   "artifacts": [
     {
       "id": "nextflow-language-server",
-      "version": "26.04.4",
+      "version": "26.10.2",
       "file": "language-server-all.jar",
-      "source": "https://github.com/nextflow-io/language-server/releases/download/v26.04.4/language-server-all.jar",
-      "sha256": "e1c5da90c7f0565ba9e64ac3c5b58f1215e315d6bfe4414d62ff2d02749e8887",
-      "digestSource": "https://api.github.com/repos/nextflow-io/language-server/releases/tags/v26.04.4",
+      "source": "https://github.com/nextflow-io/language-server/releases/download/v26.10.2/language-server-all.jar",
+      "sha256": "20326778651c5c5e5f40a570c2275d1f520419941624386a2b1a111f1dfa4b26",
+      "digestSource": "https://api.github.com/repos/nextflow-io/language-server/releases/tags/v26.10.2",
       "license": "Apache-2.0",
       "role": "Optional external Java runtime; not bundled or launched by this prototype."
     },

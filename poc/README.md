@@ -24,15 +24,22 @@ from the server.
 The Rust commands only launch fixed `java -jar` with the packaged
 `artifacts/language-server-all.jar` after checking its pinned SHA-256. The JAR
 is not committed; without it, language-server startup returns an error in the
-editor status. From the `poc/` directory, download the selected release into
-`artifacts/` and verify it before building:
+editor status. The pin is the latest stable release found for this update,
+Nextflow language server `v26.10.2` (published 2026-10-27). Its release API
+reports the asset digest, which was independently confirmed by downloading the
+10,015,752-byte JAR and hashing it locally. From the `poc/` directory, stage and
+verify it before building:
 
 ```sh
-curl -fL https://github.com/nextflow-io/language-server/releases/download/v26.04.4/language-server-all.jar \
+mkdir -p artifacts
+curl -fL https://github.com/nextflow-io/language-server/releases/download/v26.10.2/language-server-all.jar \
   -o artifacts/language-server-all.jar
-echo 'e1c5da90c7f0565ba9e64ac3c5b58f1215e315d6bfe4414d62ff2d02749e8887  artifacts/language-server-all.jar' \
-  | sha256sum -c -
 ```
+
+Check the JAR checksum using the command for your platform in the setup
+instructions below. `npm run audit:artifacts` checks every artifact in the
+manifest, including the deferred nf-schema blob; it will report that blob
+missing unless it has also been staged.
 
 The bundle configuration includes files placed in `artifacts/`; the runtime
 repeats the digest check before launching. This remains a single-buffer
@@ -41,16 +48,105 @@ plugin loading, automatic downloads, or cross-file navigation. The model uses a
 synthetic URI and changes are not saved. Do not use it to open or analyze an
 untrusted workflow.
 
-The selected server requires Java 17 or newer. After staging and verifying the
-JAR, package the desktop app from `poc/` with `npm run tauri -- build`.
+The JAR requires Java 17 or newer. After staging and verifying it, run the app
+with `npm run tauri dev` or package it with `npm run tauri -- build`.
 
 ## Run
 
-Prerequisites: Node.js 22.12+ (Vite 8), npm, Rust/Cargo, and the platform
-dependencies listed in the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).
-The current Linux runner lacks `webkit2gtk` and `rsvg2`, so native Tauri builds
-also need the system development libraries installed first. Its attempted
-native build stopped at missing `glib-2.0` pkg-config metadata.
+Prerequisites: Node.js 22.12+ (Vite 8), npm, Rust/Cargo, Java 17+, and the
+platform dependencies listed in the official
+[Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/). The
+supported setup instructions below distinguish the Linux environment validated
+for this checkpoint from platforms that have not yet been built here.
+
+### Ubuntu 24.04 x86_64 — validated here
+
+Open Terminal (press **Ctrl+Alt+T**) and install the Tauri system libraries:
+
+```sh
+sudo apt update
+sudo apt install -y build-essential curl wget file libxdo-dev libssl-dev \
+  libayatana-appindicator3-dev librsvg2-dev libwebkit2gtk-4.1-dev pkg-config \
+  openjdk-17-jre-headless
+```
+
+Install Node.js 22.12 or newer from the official
+[Node.js downloads](https://nodejs.org/en/download) page if `node --version`
+is older or unavailable. Install Rust with the official `rustup` installer:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+When prompted, type `1` for the default installation and press **Enter**.
+Close and reopen Terminal, then check the prerequisites:
+
+```sh
+node --version
+npm --version
+rustc --version
+java -version
+pkg-config --modversion glib-2.0 gio-2.0 webkit2gtk-4.1
+```
+
+Each command must print a version. From the repository directory, run:
+
+```sh
+cd poc
+npm ci
+mkdir -p artifacts
+curl -fL https://github.com/nextflow-io/language-server/releases/download/v26.10.2/language-server-all.jar \
+  -o artifacts/language-server-all.jar
+echo '20326778651c5c5e5f40a570c2275d1f520419941624386a2b1a111f1dfa4b26  artifacts/language-server-all.jar' \
+  | sha256sum -c -
+npm test
+npm run build
+npm run tauri dev
+```
+
+In the app window, press **Connect language server**. To verify shutdown, press
+**Stop language server**; to retry after an error, press **Retry language
+server**. The JAR must be staged before building because it is a bundled
+resource. `artifacts/` is git-ignored; do not commit the JAR.
+
+### macOS — Tauri prerequisites documented; not validated here
+
+This project has not yet been built on macOS. Tauri supports macOS; install the
+Xcode development tools and Java before following the shared npm/Rust/JAR steps:
+
+1. Open the **App Store**, search for **Xcode**, press **Get**/**Install**, then
+   open Xcode and accept its license prompt.
+2. Open **Terminal** with **Command+Space**, type `Terminal`, and press
+   **Enter**. Run `xcode-select --install`; in the popup, press **Install** and
+   wait for completion.
+3. Install Node.js 22.12+ from the official Node.js download page and Java 17+
+   from [Eclipse Temurin](https://adoptium.net/temurin/releases/). In each
+   installer, press **Continue**, accept the license, choose the standard
+   destination, press **Install**, and enter the Mac password if requested.
+4. Install Rust using the command above. Type `1` and press **Enter** when the
+   rustup installer asks for an installation choice. Close and reopen Terminal.
+5. In Terminal, run `cd /path/to/nf-gui/poc` (replace the path with the actual
+   repository location), then use the same `npm ci`, JAR download,
+   tests, build, and `npm run tauri dev` commands. Verify the JAR with:
+
+   ```sh
+   printf '%s  %s\n' \
+     '20326778651c5c5e5f40a570c2275d1f520419941624386a2b1a111f1dfa4b26' \
+     'artifacts/language-server-all.jar' | shasum -a 256 -c -
+   ```
+
+The JAR uses Java on macOS, including Apple Silicon; the separate upstream
+standalone bundle is not used by this prototype.
+
+### Windows — not an approved runtime target yet
+
+Do not build or run this PoC on Windows yet. The pinned Tauri 2.9.2 dependency
+has the documented Windows advisory described below; the project gate requires
+upgrading to at least 2.11.1 and re-auditing before Windows support is enabled.
+After that gate is cleared, Windows setup will require the Visual Studio C++
+Build Tools (Desktop development with C++ workload), Microsoft Edge WebView2,
+Node.js 22.12+, Rust's MSVC toolchain, and Java 17+. Those steps are deliberately
+not presented as a currently supported way to run this prototype.
 
 From this directory:
 
@@ -146,7 +242,7 @@ then verify them locally:
 
 ```sh
 curl -fL \
-  https://github.com/nextflow-io/language-server/releases/download/v26.04.4/language-server-all.jar \
+  https://github.com/nextflow-io/language-server/releases/download/v26.10.2/language-server-all.jar \
   -o artifacts/language-server-all.jar
 curl -fL \
   'https://public.cr.seqera.io/v2/nextflow/plugin/nf-schema/blobs/sha256:1466fea73502dda8c8059dfe4190be1a857151bc2a500a87a86ffd223918a3f2' \
@@ -156,6 +252,9 @@ npm run audit:artifacts
 
 The verifier reads only local regular files, checks SHA-256, rejects symlinked
 files and path-containing filenames, and never downloads or executes artifacts.
+The full manifest check currently reports the unavailable nf-schema blob unless
+it is staged; this is expected because that plugin remains deferred. Use the
+per-artifact SHA-256 commands above to verify only the language-server JAR.
 To verify a different manifest or staging directory, use
 `node scripts/verify-artifacts.mjs --manifest PATH --artifacts-dir PATH`.
 On any update, first verify the upstream release/tag and license, update the
