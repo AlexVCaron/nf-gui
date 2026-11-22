@@ -56,6 +56,8 @@ partial progress, blockers, validation limitations, and reopened work.
 - `cargo audit` is not installed (`cargo` reports no `audit` subcommand). The
   direct new Rust dependencies were checked with the GitHub advisory database;
   the complete Rust dependency graph was not audited in this environment.
+- CodeQL reported no JavaScript alerts but timed out before completing analysis of
+  every language; the tool advised that rerunning would not complete successfully.
 - The user's prior “all works” confirmation applies to the earlier single-buffer
   Codespaces version. The new folder picker, multi-document UI, and multi-file
   server behavior have not been tested end to end.
