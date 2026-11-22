@@ -140,7 +140,7 @@ the Tauri UI: Connect/Stop, diagnostics, hover, and completion remain
 unvalidated end to end. Workspace lifecycle, process-tree management, restart
 recovery, cross-file behavior, and the full Monaco feature set remain unproven.
 
-### Validation delivery: headless CI and human review
+### Validation delivery: headless CI and Codespaces
 
 Plan repeatable, headless validation in GitHub Actions for frontend tests/build,
 Rust tests with Tauri's native Linux prerequisites, and integrity checks for
@@ -148,13 +148,46 @@ the pinned server artifact. A real-server integration job should download only
 the exact pinned release, verify its SHA-256, and test the protocol lifecycle;
 do not commit the JAR or bypass its runtime verification.
 
-Interactive review is a separate, optional layer. Once the editor bridge is
-usable, reviewers can use a native desktop build or a Codespace configured with
-a remote desktop (for example, VNC/noVNC) to try the connect/diagnostics/hover
-flow. Forwarding only the Vite browser page is not sufficient to validate Tauri
-IPC. Prefer Actions artifacts for local desktop testing if remote display adds
-more setup than review value. Neither a Codespace nor a successful package build
-replaces the headless tests.
+The next environment task prioritizes a reproducible Linux GitHub Codespace for
+interactive testing of the actual Tauri application. Check in a devcontainer
+configuration and bootstrap/launch scripts that provide the Node.js toolchain
+required by the lockfile, Rust/Cargo, the Java runtime required by the pinned
+language server, Tauri's Linux build libraries, and the X11/window-manager and
+noVNC components needed for a remote desktop. Keep setup idempotent and make
+missing prerequisites or an invalid/missing staged server artifact fail with
+actionable errors. Stage only the exact pinned JAR and verify its SHA-256; do not
+commit it or bypass runtime verification.
+
+Configure a shared display for Tauri-launched processes and a simple command to
+start the display services and app. Forward the noVNC web port privately through
+Codespaces; bind raw VNC locally, do not forward its port, and do not place
+credentials in repository configuration. Document how to open the Codespace
+from the PR branch and verify the intended commit before testing. Forwarding
+only the Vite browser page is not sufficient to validate Tauri IPC.
+
+Codespaces is the prioritized human-review path, not a replacement for
+headless GitHub Actions tests or a claim of platform support. Validate a fresh
+Codespace through dependency installation, frontend and Rust tests, native
+Tauri build/launch, and real-server Connect/Stop, diagnostics, hover, and
+completion checks. Keep uncompleted checks and any environment-specific
+limitations explicit.
+
+### P1-07 — Reproducible Linux Codespaces environment
+
+Add repository-owned Codespaces configuration and scripts for the dependencies,
+artifact staging/integrity check, display setup, and Tauri launch described
+above. Verify that a newly created Codespace can run the documented setup
+without manual installation of missing Rust/Cargo or native build libraries.
+Keep interactive remote desktop access private and keep the headless test path
+independent.
+
+### P1-08 — Codespaces end-to-end validation
+
+From the intended PR revision, verify the commit SHA, run setup, tests, and a
+native Tauri build, then exercise the pinned server through the real UI. Record
+the exact checks and results in the tracker. Validate Connect/Stop, diagnostics,
+hover, completion, and failure/retry behavior; do not mark complete based only
+on a browser dev server or successful build.
 
 ### P1-02 — Monaco bridge compatibility checkpoint
 

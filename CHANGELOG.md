@@ -6,6 +6,46 @@ This file records planning and implementation advancement, not just releases.
 Update it alongside the tracker whenever working on plan tasks, including
 partial progress, blockers, validation limitations, and reopened work.
 
+## 2026-11-22 — Prioritize GitHub Codespaces setup
+
+### Tasks/status
+
+- **P1-07 planned:** prioritize a checked-in, reproducible Linux Codespaces
+  environment after the reported run showed Rust/Cargo was missing.
+- **P1-08 planned:** validate a fresh Codespace at the intended PR commit,
+  including the native Tauri UI and pinned language server.
+
+### Work and decisions
+
+- Updated the [Phase 1 plan](docs/plan/phase-1-language-server.md) to make
+  Codespaces the prioritized interactive Linux testing path while retaining
+  headless GitHub Actions as a separate requirement.
+- Specified devcontainer/bootstrap and launch configuration for Node.js,
+  Rust/Cargo, Java, Tauri Linux libraries, display/noVNC, private port
+  forwarding, exact-commit verification, and SHA-256-checked JAR staging.
+  Raw VNC must not be forwarded, and credentials must not be stored in repo
+  configuration.
+- Added stable P1-07/P1-08 tasks and evidence to the
+  [tracker](PLAN_TRACKING.md#phase-1--language-server-integration). This change
+  updates the plan only; no Codespaces files or scripts have been implemented.
+
+### Validation
+
+- No repository tests, builds, or Codespaces configuration checks were run;
+  this change is planning documentation only.
+- The user-reported Codespace run passed `npm ci`, all 25 frontend tests, and
+  the pinned JAR checksum. It failed when invoking Cargo and `tauri dev` because
+  `cargo` was not installed; these are user-provided results, not checks run in
+  this change.
+
+### Limitations and next steps
+
+- Implement P1-07: add and validate the Linux devcontainer, dependencies,
+  artifact staging/check, display startup, and Tauri launch scripts.
+- Then complete P1-08 by testing from a fresh Codespace on the verified PR
+  commit, including the native build and real-server Connect/Stop and language
+  features. No end-to-end Codespaces result is available yet.
+
 ## Entry requirements
 
 Add dated entries newest first, using a descriptive heading and stable task IDs.
