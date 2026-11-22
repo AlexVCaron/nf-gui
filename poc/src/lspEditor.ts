@@ -39,6 +39,7 @@ export async function connectLspEditor(
   model: monaco.editor.ITextModel,
   onStderr: (chunk: Uint8Array) => void,
   onExit: (reason: string) => void,
+  workspaceRoot?: string,
 ): Promise<LspEditorSession> {
   let client: LspRpcClient | undefined;
   let transport: LspTransport | undefined;
@@ -117,11 +118,12 @@ export async function connectLspEditor(
       },
     );
 
+    const rootUri = workspaceRoot ? monaco.Uri.file(workspaceRoot).toString() : null;
     const initialized = await client.request("initialize", {
       processId: null,
       clientInfo: { name: "nf-gui-poc", version: "0.1.0" },
       locale: "en",
-      rootUri: null,
+      rootUri,
       capabilities: {
         textDocument: {
           completion: {
@@ -131,8 +133,12 @@ export async function connectLspEditor(
           publishDiagnostics: { relatedInformation: true },
           synchronization: { dynamicRegistration: false, didSave: false },
         },
-        workspace: { workspaceFolders: false },
+        workspace: { workspaceFolders: true },
+        general: {},
       },
+      workspaceFolders: rootUri
+        ? [{ uri: rootUri, name: rootUri.split("/").filter(Boolean).at(-1) ?? "workspace" }]
+        : null,
       trace: "off",
     });
     const capabilities = isRecord(initialized) && isRecord(initialized.capabilities)

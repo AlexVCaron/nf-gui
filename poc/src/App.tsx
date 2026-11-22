@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import {
   Background,
   Controls,
@@ -48,6 +49,22 @@ workflow {
 }
 `;
 
+type WorkspaceSnapshot = {
+  name: string;
+  rootPath: string;
+  documents: Array<{
+    relativePath: string;
+    absolutePath: string;
+    content: string;
+  }>;
+};
+
+type WorkspaceFile = {
+  relativePath: string;
+  uri: string;
+  model: monaco.editor.ITextModel;
+};
+
 const initialNodes: Node[] = [
   {
     id: "source",
@@ -86,8 +103,14 @@ function App() {
   const editorElement = useRef<HTMLDivElement>(null);
   const editorInstance = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const lspSession = useRef<LspEditorSession | null>(null);
+  const documentModels = useRef(new Map<string, monaco.editor.ITextModel>());
+  const documentBaselines = useRef(new Map<string, string>());
+  const workspaceRoot = useRef<string | null>(null);
   const editorGeneration = useRef(0);
   const serverOperationInFlight = useRef(false);
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
+  const [activeUri, setActiveUri] = useState("");
   const [hasEdits, setHasEdits] = useState(false);
   const [languageServerStatus, setLanguageServerStatus] = useState<
     "disconnected" | "connecting" | "connected" | "stopping" | "error"
@@ -102,6 +125,9 @@ function App() {
       "nextflow",
       monaco.Uri.parse("file:///nf-gui/main.nf"),
     );
+    documentModels.current.set(model.uri.toString(), model);
+    documentBaselines.current.set(model.uri.toString(), sampleSource);
+    setActiveUri(model.uri.toString());
 
     const editor = monaco.editor.create(editorElement.current, {
       model,
@@ -116,7 +142,12 @@ function App() {
 
     editorInstance.current = editor;
     const changeSubscription = editor.onDidChangeModelContent(() => {
-      setHasEdits(editor.getValue() !== sampleSource);
+      const activeModel = editor.getModel();
+      const activeModelUri = activeModel?.uri.toString();
+      setHasEdits(
+        Boolean(activeModel && activeModelUri &&
+          activeModel.getValue() !== documentBaselines.current.get(activeModelUri)),
+      );
     });
 
     return () => {
@@ -125,10 +156,79 @@ function App() {
       lspSession.current = null;
       changeSubscription.dispose();
       editor.dispose();
-      model.dispose();
+      for (const documentModel of documentModels.current.values()) documentModel.dispose();
+      documentModels.current.clear();
+      documentBaselines.current.clear();
       editorInstance.current = null;
     };
   }, []);
+
+  async function openWorkspace() {
+    if (serverOperationInFlight.current) return;
+    serverOperationInFlight.current = true;
+    setLanguageServerError("");
+
+    try {
+      const workspace = await invoke<WorkspaceSnapshot | null>("workspace_open");
+      if (!workspace) return;
+      if (workspace.documents.length === 0) {
+        throw new Error("The selected workspace has no Nextflow files");
+      }
+
+      editorGeneration.current += 1;
+      const existingSession = lspSession.current;
+      lspSession.current = null;
+      if (existingSession) {
+        setLanguageServerStatus("stopping");
+        await existingSession.stop();
+      }
+
+      const editor = editorInstance.current;
+      if (!editor) throw new Error("The source editor is not ready");
+      editor.setModel(null);
+      for (const model of documentModels.current.values()) model.dispose();
+      documentModels.current.clear();
+      documentBaselines.current.clear();
+
+      const files = workspace.documents.map(({ relativePath, absolutePath, content }) => {
+        const model = monaco.editor.createModel(
+          content,
+          "nextflow",
+          monaco.Uri.file(absolutePath),
+        );
+        const uri = model.uri.toString();
+        documentModels.current.set(uri, model);
+        documentBaselines.current.set(uri, content);
+        return { relativePath, uri, model };
+      });
+
+      workspaceRoot.current = workspace.rootPath;
+      setWorkspaceName(workspace.name);
+      setWorkspaceFiles(files);
+      setActiveUri(files[0].uri);
+      editor.setModel(files[0].model);
+      setHasEdits(false);
+      setLanguageServerStatus("disconnected");
+    } catch (error) {
+      setLanguageServerError(error instanceof Error ? error.message : "Could not open workspace");
+    } finally {
+      serverOperationInFlight.current = false;
+    }
+  }
+
+  function selectDocument(file: WorkspaceFile) {
+    const model = documentModels.current.get(file.uri);
+    if (!model || !editorInstance.current) return;
+    editorInstance.current.setModel(model);
+    setActiveUri(file.uri);
+    setHasEdits(model.getValue() !== documentBaselines.current.get(file.uri));
+    void lspSession.current?.openDocument(model).catch((error: unknown) => {
+      setLanguageServerStatus("error");
+      setLanguageServerError(
+        error instanceof Error ? error.message : "Could not synchronize the selected document",
+      );
+    });
+  }
 
   async function toggleLanguageServer() {
     if (serverOperationInFlight.current) return;
@@ -162,6 +262,7 @@ function App() {
             setLanguageServerStatus("error");
             setLanguageServerError(`Language server stopped: ${reason}`);
           },
+          workspaceRoot.current ?? undefined,
         );
         if (generation !== editorGeneration.current || !session.isActive) {
           await session.stop();
@@ -182,7 +283,10 @@ function App() {
   }
 
   function resetSample() {
-    editorInstance.current?.setValue(sampleSource);
+    const model = documentModels.current.get("file:///nf-gui/main.nf");
+    if (!model) return;
+    model.setValue(sampleSource);
+    documentBaselines.current.set(model.uri.toString(), sampleSource);
     setHasEdits(false);
   }
 
@@ -198,10 +302,18 @@ function App() {
         </div>
         <div className="workspace-title">
           <span className="status-dot" />
-          Untitled workflow
-          {hasEdits && <span className="dirty-indicator">Unsaved prototype edits</span>}
+          {workspaceName || "Untitled workflow"}
+          {hasEdits && <span className="dirty-indicator">Unsaved edits</span>}
         </div>
         <div className="topbar-actions">
+          <button
+            className="open-workspace-button"
+            type="button"
+            onClick={() => void openWorkspace()}
+            disabled={languageServerStatus === "connecting" || languageServerStatus === "stopping"}
+          >
+            Open project
+          </button>
          <button
            className="language-server-button"
            type="button"
@@ -221,36 +333,66 @@ function App() {
                    ? "Retry language server"
                    : "Connect language server"}
          </button>
-         <button className="reset-button" type="button" onClick={resetSample}>
-           Reset sample
-         </button>
+         {!workspaceName &&
+           <button className="reset-button" type="button" onClick={resetSample}>
+             Reset sample
+           </button>}
         </div>
       </header>
 
       <div className="workspace">
-        <aside className="file-rail" aria-label="Prototype workspace files">
+        <aside className="file-rail" aria-label="Workspace files">
           <div className="rail-heading">WORKSPACE</div>
-          <button className="file-item selected" type="button" aria-current="page">
-            <span className="file-icon">N</span> main.nf
-          </button>
-          <div className="rail-note">Local sample only</div>
+          {workspaceFiles.length > 0
+            ? workspaceFiles.map((file) => (
+                <button
+                  className={`file-item${activeUri === file.uri ? " selected" : ""}`}
+                  type="button"
+                  aria-current={activeUri === file.uri ? "page" : undefined}
+                  key={file.uri}
+                  onClick={() => selectDocument(file)}
+                  title={file.relativePath}
+                >
+                  <span className="file-icon">N</span>
+                  <span className="file-name">{file.relativePath}</span>
+                  {file.model.getValue() !== documentBaselines.current.get(file.uri) &&
+                    <span className="file-dirty" aria-label="Unsaved changes">●</span>}
+                </button>
+              ))
+            : <button
+                className="file-item selected"
+                type="button"
+                aria-current="page"
+              >
+                <span className="file-icon">N</span> main.nf
+              </button>}
+          <div className="rail-note">
+            {workspaceName ? "Edits stay in memory; files are not saved" : "Local sample only"}
+          </div>
         </aside>
 
         <section className="editor-panel" aria-label="Workflow source">
           <div className="panel-heading">
-            <div className="tab active"><span className="file-icon">N</span> main.nf</div>
+            <div className="tab active">
+              <span className="file-icon">N</span>
+              {workspaceFiles.find((file) => file.uri === activeUri)?.relativePath ?? "main.nf"}
+            </div>
             <span className="panel-meta" aria-live="polite">
               {languageServerError || (languageServerStatus === "connected"
                 ? "Nextflow language server connected"
-                : "Sample buffer · language server disconnected")}
+                : workspaceName
+                  ? "Workspace buffer · language server disconnected"
+                  : "Sample buffer · language server disconnected")}
             </span>
           </div>
           <div className="editor-host" ref={editorElement} />
           <div className="statusbar">
             <span>
               {languageServerStatus === "connected"
-                ? "Unsaved sample buffer · diagnostics and hover enabled"
-                : "Prototype buffer · changes are not saved"}
+                ? "In-memory document · diagnostics and hover enabled"
+                : workspaceName
+                  ? "Workspace source · changes are not saved to disk"
+                  : "Prototype buffer · changes are not saved"}
             </span>
             <span>UTF-8&nbsp;&nbsp; LF</span>
           </div>
@@ -286,7 +428,7 @@ function App() {
 
       <footer className="safety-notice">
         <span aria-hidden="true">ⓘ</span>
-        Sample workspace only: no project files are opened and no plugins or workflows are run.
+        No plugins or workflows are run. Workspace edits remain in memory and are not saved.
       </footer>
     </main>
   );

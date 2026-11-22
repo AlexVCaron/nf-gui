@@ -100,7 +100,8 @@ button {
   font-size: 11px;
 }
 
-.reset-button {
+.reset-button,
+.open-workspace-button {
   min-width: 115px;
   padding: 7px 10px;
   border: 1px solid #3b4655;
@@ -108,6 +109,21 @@ button {
   background: #242d39;
   cursor: pointer;
   font-size: 12px;
+}
+
+.open-workspace-button {
+  border-color: #3b6b61;
+  background: #20352f;
+  color: #b7e6d5;
+}
+
+.open-workspace-button:hover:not(:disabled) {
+  background: #29473e;
+}
+
+.open-workspace-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .topbar-actions {
@@ -174,9 +190,25 @@ button {
   font-size: 12px;
 }
 
+.file-item {
+  cursor: pointer;
+}
+
 .file-item.selected {
   background: #252f3c;
   color: #f0f3f8;
+}
+
+.file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-dirty {
+  margin-left: auto;
+  color: #e5bf74;
+  font-size: 8px;
 }
 
 .file-icon {
