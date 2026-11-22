@@ -110,9 +110,13 @@ editor session owns an authoritative model registry keyed by document URI. It
 opens each model once, synchronizes advertised full or incremental changes with
 that model's version, closes only the matching model, and routes diagnostics,
 hover, and completion to registered models. Reopening one model is idempotent;
-opening a different model at an already-open URI is rejected. The current UI
-still opens only one sample document; workspace tabs and filesystem lifecycle
-are not implemented. Protocol framing, document lifecycle/sync, completion
+opening a different model at an already-open URI is rejected. The UI now has a
+native folder picker and bounded `.nf` source discovery, an explorer for
+switching between in-memory Monaco models, and workspace-root initialization
+for the language server. Selecting another document opens it in the current LSP
+session. This is not yet a full workspace lifecycle: edits are not saved,
+external changes are not watched, and rename/delete flows are not implemented.
+Protocol framing, document lifecycle/sync, completion
 normalization, request correlation, cancellation, timeout, write ordering, and
 closure have focused tests. Outbound JSON-RPC frames are serialized so edits
 reach the server in document-version order. Failed synchronous or asynchronous
@@ -136,9 +140,12 @@ experiment instructions in [the PoC README](../../poc/README.md) show how to
 stage the already-pinned release for packaging. A direct JAR initialize/shutdown
 exchange passed, and the native Ubuntu build and virtual-display app launch
 passed. The adapter has not yet been exercised against the real server through
-the Tauri UI: Connect/Stop, diagnostics, hover, and completion remain
-unvalidated end to end. Workspace lifecycle, process-tree management, restart
-recovery, cross-file behavior, and the full Monaco feature set remain unproven.
+the Tauri UI: Connect/Stop, diagnostics, hover, and completion were subsequently
+confirmed by the user in Codespaces for the single-buffer version. The new
+workspace picker/multi-document changes have not yet been validated through a
+fresh native build or real-server UI session. Workspace file lifecycle,
+process-tree management, restart recovery, cross-file behavior, and the full
+Monaco feature set remain unproven.
 
 ### Validation delivery: headless CI and Codespaces
 

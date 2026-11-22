@@ -6,6 +6,65 @@ This file records planning and implementation advancement, not just releases.
 Update it alongside the tracker whenever working on plan tasks, including
 partial progress, blockers, validation limitations, and reopened work.
 
+## 2026-11-22 — Add a bounded multi-file workspace spike
+
+### Tasks/status
+
+- **P1-03 in progress:** added native workspace selection and multiple
+  in-memory document models with per-document URIs and synchronization.
+- **P1-04 in progress:** language-server initialization now receives the
+  selected workspace root and workspace folder; interactive validation against
+  the pinned server is still pending.
+
+### Work and decisions
+
+- Added the pinned Rust `tauri-plugin-dialog` and `serde` dependencies, checked
+  their versions with the GitHub advisory database, and registered only the
+  native dialog plugin plus a narrow `workspace_open` command. No general
+  filesystem IPC is exposed.
+- Added `poc/src-tauri/src/workspace.rs`: after an OS folder selection, it
+  canonicalizes and opens the root, skips hidden/generated directories and
+  symlinks, loads UTF-8 `.nf` files only, and enforces depth, entry-count,
+  per-file, and total-size bounds. On Unix, descriptor-relative `openat` calls
+  with `O_NOFOLLOW` open each path component and the file itself, binding reads
+  to the selected root and preventing symlink path swaps from escaping it.
+  Added tests for filtering, invalid UTF-8, symlinks, and size/entry limits.
+- Updated the UI to show selected project files, switch editor models, retain
+  document URI identity, open selected documents in the current LSP session,
+  and prompt before discarding unsaved in-memory edits when switching project.
+  Initialization supplies `rootUri` and `workspaceFolders`.
+- Changes remain in memory and are not written to disk. Save, file watching,
+  rename/delete, and external-change conflict handling remain deferred.
+- Updated the [Phase 1 plan](docs/plan/phase-1-language-server.md),
+  [tracker](PLAN_TRACKING.md), and [PoC README](poc/README.md) with scope and
+  validation boundaries.
+
+### Validation
+
+- `npm ci` passed with zero reported vulnerabilities; `npm test` passed all 27
+  tests; `npm run build` passed with the existing Monaco chunk-size warning.
+- `npm audit --audit-level=moderate`, `cargo fmt --all -- --check`,
+  `cargo metadata --locked --no-deps`, and `git diff --check` passed.
+- `cargo test --locked` could not compile on this host because GLib/GObject
+  development libraries are absent, and cannot be installed in this environment
+  without elevated package-manager permissions. The new Rust workspace tests
+  are therefore not executed here.
+- `cargo audit` is not installed (`cargo` reports no `audit` subcommand). The
+  direct new Rust dependencies were checked with the GitHub advisory database;
+  the complete Rust dependency graph was not audited in this environment.
+- The user's prior “all works” confirmation applies to the earlier single-buffer
+  Codespaces version. The new folder picker, multi-document UI, and multi-file
+  server behavior have not been tested end to end.
+
+### Limitations and next steps
+
+- Rebuild/reopen the Codespace on this commit, open a real project with at least
+  `main.nf` and a module, and verify file switching, versioned updates,
+  diagnostics, hover, and completion against the pinned server.
+- Keep P1-03/P1-04 in progress until those results are recorded. Then address
+  saving and external file lifecycle/conflict behavior under P1-05; Phase 1
+  exit remains open.
+
 ## 2026-11-22 — Confirm Codespaces Tauri/LSP checks
 
 ### Tasks/status

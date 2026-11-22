@@ -137,7 +137,10 @@ export async function connectLspEditor(
         general: {},
       },
       workspaceFolders: rootUri
-        ? [{ uri: rootUri, name: rootUri.split("/").filter(Boolean).at(-1) ?? "workspace" }]
+        ? [{
+            uri: rootUri,
+            name: rootUri.split("/").filter(Boolean).slice(-1)[0] ?? "workspace",
+          }]
         : null,
       trace: "off",
     });

@@ -8,24 +8,34 @@ license does not replace those obligations.
 
 ## What it demonstrates
 
-- Tauri 2.12.7 desktop shell, `@tauri-apps/api` 2.12.5, and a
-  React/TypeScript/Vite frontend.
+- Tauri 2.12.7 desktop shell, `@tauri-apps/api` 2.12.5, the native
+  `tauri-plugin-dialog` 2.4.0 folder picker, and a React/TypeScript/Vite frontend.
 - A local Monaco plain-text editor and a static React Flow canvas.
 - Exact direct dependency pins plus `package-lock.json` and `src-tauri/Cargo.lock`.
 - A local-only SHA-256 verifier for the optional Nextflow language-server JAR
   and nf-schema plugin blob.
 
 The editor and graph are independent examples: changing the editor does not
-change the graph. The editor now has explicit connect/stop controls for the
-supervised LSP transport. When connected, it opens one in-memory sample buffer,
-syncs edits, displays server diagnostics, and provides completion and hover if
-the server advertises support. The graph remains static and is not derived
-from the server.
+change the graph. **Open project** uses a native folder picker to load up to 256
+UTF-8 `.nf` files from the selected directory (up to 1 MiB per file, 16 MiB
+total). Hidden and common generated directories are skipped. On Unix, reads
+are rooted at a directory handle and reject symlinks in every path component.
+Workspace opening is currently disabled on non-Unix platforms until an
+equivalent handle-safe reader is implemented.
+Files appear in the explorer and can be switched between in the editor. The
+language server receives the selected workspace root and each document is
+synchronized when opened. Edits remain in memory and are not saved to disk.
+Connect/stop controls manage the supervised LSP transport; diagnostics,
+completion, and hover are available when advertised by the server. The graph
+remains static and is not derived from source.
 
-The Rust commands only launch fixed `java -jar` with the packaged
-`artifacts/language-server-all.jar` after checking its pinned SHA-256. The JAR
-is not committed; without it, language-server startup returns an error in the
-editor status. The pin is the latest stable release found for this update,
+The LSP commands only launch fixed `java -jar` with the packaged
+`artifacts/language-server-all.jar` after checking its pinned SHA-256. The native
+workspace command reads only `.nf` files under the folder explicitly selected
+with the OS directory picker, with bounded depth/file/count/size and symlink
+checks; it does not expose a general filesystem command. The JAR is not
+committed; without it, language-server startup returns an error in the editor
+status. The pin is the latest stable release found for this update,
 Nextflow language server `v26.10.2` (published 2026-10-27). Its release API
 reports the asset digest, which was independently confirmed by downloading the
 10,015,752-byte JAR and hashing it locally. From the `poc/` directory, stage and
@@ -43,12 +53,11 @@ manifest, including the deferred nf-schema blob; it will report that blob
 missing unless it has also been staged.
 
 The bundle configuration includes files placed in `artifacts/`; the runtime
-repeats the digest check before launching. This remains a single-buffer integration spike in the UI: it has no project
-workspace/file access, pipeline execution, plugin loading, automatic downloads,
-or cross-file navigation. Its session API can register multiple in-memory
-models, but no workspace UI uses that capability yet. The sample model uses a
-synthetic URI and changes are not saved. Do not use it to open or analyze an
-untrusted workflow.
+repeats the digest check before launching. Workspace and cross-file behavior is
+an early integration spike: edits stay in memory, with no save, file watcher,
+rename/delete lifecycle, pipeline execution, plugin loading, or automatic
+download. The graph is still illustrative and disconnected from pipeline
+semantics. Do not use it to execute untrusted workflows.
 
 The JAR requires Java 17 or newer. After staging and verifying it, run the app
 with `npm run tauri dev` or package it with `npm run tauri -- build`.

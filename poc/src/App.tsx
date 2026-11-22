@@ -169,6 +169,13 @@ function App() {
     setLanguageServerError("");
 
     try {
+      const hasUnsavedDocuments = [...documentModels.current.entries()].some(
+        ([uri, model]) => model.getValue() !== documentBaselines.current.get(uri),
+      );
+      if (hasUnsavedDocuments &&
+          !window.confirm("Opening another workspace will discard unsaved in-memory edits. Continue?")) {
+        return;
+      }
       const workspace = await invoke<WorkspaceSnapshot | null>("workspace_open");
       if (!workspace) return;
       if (workspace.documents.length === 0) {
@@ -223,7 +230,6 @@ function App() {
     setActiveUri(file.uri);
     setHasEdits(model.getValue() !== documentBaselines.current.get(file.uri));
     void lspSession.current?.openDocument(model).catch((error: unknown) => {
-      setLanguageServerStatus("error");
       setLanguageServerError(
         error instanceof Error ? error.message : "Could not synchronize the selected document",
       );
@@ -352,6 +358,7 @@ function App() {
                   key={file.uri}
                   onClick={() => selectDocument(file)}
                   title={file.relativePath}
+                  disabled={languageServerStatus === "connecting" || languageServerStatus === "stopping"}
                 >
                   <span className="file-icon">N</span>
                   <span className="file-name">{file.relativePath}</span>
