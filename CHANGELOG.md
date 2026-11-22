@@ -28,7 +28,11 @@ partial progress, blockers, validation limitations, and reopened work.
   per-file, and total-size bounds. On Unix, descriptor-relative `openat` calls
   with `O_NOFOLLOW` open each path component and the file itself, binding reads
   to the selected root and preventing symlink path swaps from escaping it.
-  Added tests for filtering, invalid UTF-8, symlinks, and size/entry limits.
+  Final files are opened with `O_NONBLOCK` so a swapped-in FIFO cannot hang the
+  reader; metadata from the opened handle rejects non-regular files. Workspace
+  loading is disabled on non-Unix platforms until equivalent handle-safe
+  traversal is available. Tests cover filtering, invalid UTF-8, symlinks, FIFO
+  handling, and size/entry limits.
 - Updated the UI to show selected project files, switch editor models, retain
   document URI identity, open selected documents in the current LSP session,
   and prompt before discarding unsaved in-memory edits when switching project.
@@ -55,6 +59,10 @@ partial progress, blockers, validation limitations, and reopened work.
 - The user's prior “all works” confirmation applies to the earlier single-buffer
   Codespaces version. The new folder picker, multi-document UI, and multi-file
   server behavior have not been tested end to end.
+- A follow-up code review identified a non-Unix path-swap fallback and a possible
+  FIFO blocking issue. The fallback is now disabled, and Unix file opens are
+  nonblocking; Rust tests remain blocked here by missing GTK/GLib development
+  libraries.
 
 ### Limitations and next steps
 

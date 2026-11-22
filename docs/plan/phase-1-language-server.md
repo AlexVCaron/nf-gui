@@ -113,9 +113,13 @@ hover, and completion to registered models. Reopening one model is idempotent;
 opening a different model at an already-open URI is rejected. The UI now has a
 native folder picker and bounded `.nf` source discovery, an explorer for
 switching between in-memory Monaco models, and workspace-root initialization
-for the language server. Selecting another document opens it in the current LSP
-session. This is not yet a full workspace lifecycle: edits are not saved,
-external changes are not watched, and rename/delete flows are not implemented.
+for the language server. On Unix, reads are rooted at a held directory handle,
+reject symlinks in every component, and use nonblocking opens for final files;
+workspace loading is disabled on non-Unix platforms until equivalent
+handle-safe traversal is available. Selecting another document opens it in the
+current LSP session. This is not yet a full workspace lifecycle: edits are not
+saved, external changes are not watched, and rename/delete flows are not
+implemented.
 Protocol framing, document lifecycle/sync, completion
 normalization, request correlation, cancellation, timeout, write ordering, and
 closure have focused tests. Outbound JSON-RPC frames are serialized so edits
