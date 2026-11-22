@@ -383,8 +383,8 @@ mod tests {
     #[test]
     fn does_not_follow_symlinked_files_or_directories() {
         use std::ffi::CString;
-        use std::os::unix::fs::symlink;
         use std::os::unix::ffi::OsStrExt;
+        use std::os::unix::fs::symlink;
 
         let directory = TestDirectory::new();
         let outside = TestDirectory::new();
