@@ -6,6 +6,42 @@ This file records planning and implementation advancement, not just releases.
 Update it alongside the tracker whenever working on plan tasks, including
 partial progress, blockers, validation limitations, and reopened work.
 
+## 2026-11-22 — Confirm Codespaces remote desktop access
+
+### Tasks/status
+
+- **P1-07 complete:** the user confirmed the Codespaces noVNC desktop path works.
+- **P1-08 in progress:** native build/Rust tests and actual Tauri/LSP feature
+  checks remain the next validation task.
+
+### Work and decisions
+
+- Updated the [tracker](PLAN_TRACKING.md) to record the user's confirmation
+  that opening the forwarded noVNC service at `/vnc.html` reaches the viewer.
+  The service root itself may show a normal noVNC static-file directory listing.
+- Updated the [PoC instructions](poc/README.md#github-codespaces--linux-desktop-review)
+  with the `/vnc.html` viewer path and clarified that remote desktop access does
+  not establish the native build or language-server UI behavior.
+- Kept P1-08 active rather than inferring Connect/Stop, diagnostics, hover, or
+  completion results from the viewer-access confirmation.
+
+### Validation
+
+- User-reported: the Codespaces noVNC desktop viewer works when opened at
+  `/vnc.html`.
+- No code tests or builds were run for this documentation/status update.
+- The prior local bootstrap, 27 frontend tests, frontend build, config checks,
+  and secret scan remain recorded in the preceding changelog entry. Rust tests
+  could not build on the local host due to missing GLib development libraries.
+
+### Limitations and next steps
+
+- In the working Codespace, verify the intended commit SHA; run frontend tests,
+  build, Rust tests, and native Tauri build.
+- Launch the app through the noVNC desktop and explicitly test Connect/Stop,
+  diagnostics, hover, and completion. Record the observed results before
+  completing P1-08.
+
 ## 2026-11-22 — Add Codespaces development environment
 
 ### Tasks/status

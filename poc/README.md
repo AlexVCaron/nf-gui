@@ -158,17 +158,19 @@ npm run codespace:desktop
 ```
 
 Open the automatically forwarded **Private Tauri desktop (noVNC)** port 6080
-from the Codespaces **Ports** tab and connect to the desktop. Forwarding is
-private to authorized Codespaces users; the raw VNC server binds only to
-localhost and its port must not be forwarded. Do not expose port 1420 as a
-substitute: the browser Vite page does not exercise Tauri IPC. In the desktop
-window, test Connect/Stop and the available diagnostics, hover, and completion
-features. The prototype still uses a single in-memory sample buffer and does
-not demonstrate workspace or cross-file behavior.
+from the Codespaces **Ports** tab and navigate to `/vnc.html` if the server root
+shows a directory listing. Connect to the desktop viewer. Forwarding is private
+to authorized Codespaces users; the raw VNC server binds only to localhost and
+its port must not be forwarded. Do not expose port 1420 as a substitute: the
+browser Vite page does not exercise Tauri IPC. In the desktop window, test
+Connect/Stop and the available diagnostics, hover, and completion features. The
+prototype still uses a single in-memory sample buffer and does not demonstrate
+workspace or cross-file behavior.
 
-Codespaces setup and UI testing have not yet been validated in a fresh Codespace.
-This optional interactive path does not replace headless CI, and does not by
-itself establish Linux product support.
+The user confirmed that the Codespaces noVNC viewer works when opened at
+`/vnc.html`. Native build/Rust tests and the actual Tauri/LSP feature checks
+remain to be reported. This optional interactive path does not replace headless
+CI or by itself establish Linux product support.
 
 ### macOS — Tauri prerequisites documented; not validated here
 
