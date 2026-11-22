@@ -6,6 +6,44 @@ This file records planning and implementation advancement, not just releases.
 Update it alongside the tracker whenever working on plan tasks, including
 partial progress, blockers, validation limitations, and reopened work.
 
+## 2026-11-22 — Confirm Codespaces Tauri/LSP checks
+
+### Tasks/status
+
+- **P1-08 complete (user-confirmed):** the user reports that all previously
+  listed Codespaces setup, build/test, desktop, and Tauri/LSP checks work.
+- **P1-03/P1-04 remain in progress:** a real workspace and cross-file behavior
+  are still required; Phase 1 exit remains open.
+
+### Work and decisions
+
+- Updated the [tracker](PLAN_TRACKING.md) to record P1-08 as user-confirmed
+  complete and identify workspace/multi-document synchronization and cross-file
+  LSP behavior as next work.
+- Updated the [PoC instructions](poc/README.md#github-codespaces--linux-desktop-review)
+  to distinguish user-reported Codespaces validation from locally reproduced
+  results. The exact commit SHA and raw command outputs were not provided.
+- Did not mark P1-01 through P1-06 or P1-EXIT complete: P1-08 validates the
+  Codespaces path and current single-buffer prototype, not full workspace,
+  cross-file, file lifecycle, or failure-recovery requirements.
+
+### Validation
+
+- User-reported: “Yes, this all works,” referring to the previously listed
+  Codespace commit check, frontend/Rust tests, native Tauri build, remote
+  desktop, and Connect/Stop, diagnostics, hover, and completion checks.
+- No command output or exact commit SHA was supplied for independent verification.
+- No code tests/builds were run for this plan/documentation update.
+
+### Limitations and next steps
+
+- Prioritize P1-03/P1-04: implement a real project workspace and multiple open
+  documents, then validate versioned synchronization, diagnostics, navigation,
+  completion, hover, and rename across files.
+- Continue P1-05/P1-06 external-file lifecycle and failure/restart/recovery
+  coverage. Keep P1-EXIT open until unsaved-buffer and cross-file reliability
+  requirements are demonstrated.
+
 ## 2026-11-22 — Confirm Codespaces remote desktop access
 
 ### Tasks/status

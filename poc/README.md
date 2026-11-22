@@ -167,10 +167,11 @@ Connect/Stop and the available diagnostics, hover, and completion features. The
 prototype still uses a single in-memory sample buffer and does not demonstrate
 workspace or cross-file behavior.
 
-The user confirmed that the Codespaces noVNC viewer works when opened at
-`/vnc.html`. Native build/Rust tests and the actual Tauri/LSP feature checks
-remain to be reported. This optional interactive path does not replace headless
-CI or by itself establish Linux product support.
+The user confirmed that the Codespaces setup, build/test steps, noVNC desktop,
+and Tauri/LSP interactive checks work. This is user-reported validation; exact
+command output and commit SHA are not recorded here. This optional interactive
+path does not replace headless CI or by itself establish broader Linux product
+support. The prototype remains limited to its single sample buffer.
 
 ### macOS — Tauri prerequisites documented; not validated here
 
