@@ -1,12 +1,16 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends software-properties-common \
+    && add-apt-repository -y universe \
+    && apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         build-essential \
         curl \
         dbus-x11 \
         file \
         libayatana-appindicator3-dev \
+        libglib2.0-dev \
         libgtk-3-dev \
         libssl-dev \
         librsvg2-dev \

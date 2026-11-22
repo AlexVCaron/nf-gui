@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -100,7 +100,7 @@ test("rejects symlinked artifact files", async (t) => {
 
 test("verifies only the selected artifact", async (t) => {
   const fixture = await createFixture(t);
-  const manifest = JSON.parse(await (await import("node:fs/promises")).readFile(fixture.manifestPath, "utf8"));
+  const manifest = JSON.parse(await readFile(fixture.manifestPath, "utf8"));
   manifest.artifacts.push({
     id: "unused-artifact",
     file: "unused.bin",

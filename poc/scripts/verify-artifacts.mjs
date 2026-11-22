@@ -20,7 +20,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
   if (!value || value.startsWith("--")) {
     throw new Error(`Missing value for ${argument}`);
   }
-  options.set(argument, resolve(value));
+  options.set(argument, argument === "--id" ? value : resolve(value));
   index += 1;
 }
 
@@ -67,7 +67,7 @@ for (const artifact of manifest.artifacts) {
   files.add(file);
 
   if (selectedId && id !== selectedId) {
-      continue;
+    continue;
   }
   matchedSelectedId = true;
 

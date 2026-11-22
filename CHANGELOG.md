@@ -6,6 +6,55 @@ This file records planning and implementation advancement, not just releases.
 Update it alongside the tracker whenever working on plan tasks, including
 partial progress, blockers, validation limitations, and reopened work.
 
+## 2026-11-22 — Add Codespaces development environment
+
+### Tasks/status
+
+- **P1-07 in progress:** checked in the Linux Codespaces configuration and
+  setup/desktop scripts. Local bootstrap, frontend tests, and build passed, but
+  the fresh-Codespace image and interactive desktop remain unvalidated.
+- **P1-08 planned:** real Tauri/LSP UI checks still require a fresh Codespace.
+
+### Work and decisions
+
+- Added `.devcontainer/Dockerfile` and `.devcontainer/devcontainer.json` for
+  Ubuntu 24.04, Node.js 22, stable Rust/Cargo, Java 17, Tauri Linux build
+  libraries, Xvfb/Openbox, VNC/noVNC, and a private forwarded noVNC port.
+- Added `poc/scripts/codespace-setup.sh` to install with `npm ci`, fetch only
+  the pinned Nextflow language-server release into a temporary staging
+  directory, verify it, and then move it into the ignored artifacts directory.
+  Added `--id` filtering to `verify-artifacts.mjs` so this check does not require
+  the deferred nf-schema blob; tests cover selection and unknown IDs.
+- Added `poc/scripts/codespace-desktop.sh` and npm commands to launch the Tauri
+  app under a virtual display and local-only raw VNC behind noVNC. Documented
+  exact-commit checking and the Codespaces setup/test/interactive-review path
+  in `poc/README.md`.
+- Updated P1-07 evidence and blockers in the [tracker](PLAN_TRACKING.md).
+
+### Validation
+
+- `bash poc/scripts/codespace-setup.sh` passed in the current host environment;
+  it ran `npm ci` (zero reported npm vulnerabilities) and verified the staged
+  10,015,752-byte JAR against its manifest SHA-256.
+- `npm test` passed all 27 tests; `npm run build` passed with the existing
+  Monaco chunk-size warning.
+- Shell syntax checks, JSON parsing of `devcontainer.json`, and
+  `git diff --check` passed.
+- `cargo test --locked` did not complete on this host: the host lacks GLib
+  development libraries (`gobject-2.0`/`glib-2.0` pkg-config files). The
+  devcontainer declares GTK/WebKit dependencies to supply native requirements,
+  but its image has not yet been built in Codespaces.
+- No fresh Codespace, noVNC connection, native Tauri launch, or real-server UI
+  interaction was tested. Secret scanning and CodeQL remain pending.
+
+### Limitations and next steps
+
+- P1-07 remains in progress until a fresh Codespace confirms image setup and
+  Rust/Tauri prerequisites. Validate container package availability and adjust
+  the configuration if needed.
+- Complete P1-08 by running frontend/Rust tests and native build, then testing
+  Connect/Stop, diagnostics, hover, and completion against the pinned server.
+
 ## 2026-11-22 — Prioritize GitHub Codespaces setup
 
 ### Tasks/status
