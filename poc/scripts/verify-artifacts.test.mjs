@@ -23,16 +23,19 @@ async function createFixture(t, { file = "runtime.bin", contents = "pinned artif
   return { directory, artifactsDirectory, manifestPath, artifact, contents };
 }
 
-function verify(fixture) {
+function verify(fixture, selectedId) {
+  const args = [
+    scriptPath,
+    "--manifest",
+    fixture.manifestPath,
+    "--artifacts-dir",
+    fixture.artifactsDirectory,
+  ];
+  if (selectedId) args.push("--id", selectedId);
+
   return spawnSync(
     process.execPath,
-    [
-      scriptPath,
-      "--manifest",
-      fixture.manifestPath,
-      "--artifacts-dir",
-      fixture.artifactsDirectory,
-    ],
+    args,
     { encoding: "utf8" },
   );
 }
@@ -93,4 +96,30 @@ test("rejects symlinked artifact files", async (t) => {
 
   assert.equal(result.status, 1);
   assert.match(result.stderr, /not a regular file/);
+});
+
+test("verifies only the selected artifact", async (t) => {
+  const fixture = await createFixture(t);
+  const manifest = JSON.parse(await (await import("node:fs/promises")).readFile(fixture.manifestPath, "utf8"));
+  manifest.artifacts.push({
+    id: "unused-artifact",
+    file: "unused.bin",
+    sha256: "0".repeat(64),
+  });
+  await writeFile(fixture.manifestPath, JSON.stringify(manifest));
+  await writeFile(join(fixture.artifactsDirectory, fixture.artifact.file), fixture.contents);
+
+  const result = verify(fixture, "fixture-runtime");
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Verified 1 artifact/);
+});
+
+test("rejects an unknown selected artifact id", async (t) => {
+  const fixture = await createFixture(t);
+
+  const result = verify(fixture, "unknown-artifact");
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /no artifact found with id: unknown-artifact/);
 });

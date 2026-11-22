@@ -10,10 +10,10 @@ const options = new Map();
 for (let index = 2; index < process.argv.length; index += 1) {
   const argument = process.argv[index];
   if (argument === "--help") {
-    console.log("Usage: node scripts/verify-artifacts.mjs [--manifest PATH] [--artifacts-dir PATH]");
+    console.log("Usage: node scripts/verify-artifacts.mjs [--manifest PATH] [--artifacts-dir PATH] [--id ID]");
     process.exit(0);
   }
-  if (!["--manifest", "--artifacts-dir"].includes(argument)) {
+  if (!["--manifest", "--artifacts-dir", "--id"].includes(argument)) {
     throw new Error(`Unknown option: ${argument}`);
   }
   const value = process.argv[index + 1];
@@ -26,6 +26,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 
 const manifestPath = options.get("--manifest") ?? resolve(projectDirectory, "artifacts/manifest.json");
 const artifactDirectory = options.get("--artifacts-dir") ?? resolve(projectDirectory, "artifacts");
+const selectedId = options.get("--id");
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 
 if (manifest.formatVersion !== 1 || !Array.isArray(manifest.artifacts) || manifest.artifacts.length === 0) {
@@ -34,6 +35,7 @@ if (manifest.formatVersion !== 1 || !Array.isArray(manifest.artifacts) || manife
 
 const ids = new Set();
 const files = new Set();
+let matchedSelectedId = false;
 let hasFailure = false;
 
 for (const artifact of manifest.artifacts) {
@@ -64,6 +66,11 @@ for (const artifact of manifest.artifacts) {
   ids.add(id);
   files.add(file);
 
+  if (selectedId && id !== selectedId) {
+      continue;
+  }
+  matchedSelectedId = true;
+
   const filePath = resolve(artifactDirectory, file);
   try {
     const metadata = await lstat(filePath);
@@ -88,8 +95,14 @@ for (const artifact of manifest.artifacts) {
   }
 }
 
+if (selectedId && !matchedSelectedId) {
+  console.error(`FAIL no artifact found with id: ${selectedId}`);
+  hasFailure = true;
+}
+
 if (hasFailure) {
   process.exitCode = 1;
 } else {
-  console.log(`Verified ${manifest.artifacts.length} artifact(s).`);
+  const verifiedCount = selectedId ? 1 : manifest.artifacts.length;
+  console.log(`Verified ${verifiedCount} artifact(s).`);
 }

@@ -120,6 +120,56 @@ resource. `artifacts/` is git-ignored; do not commit the JAR.
 The Linux native build and a virtual-display window launch were checked here;
 the buttons and language-server UI flow were not interactively exercised.
 
+### GitHub Codespaces — Linux desktop review
+
+The repository devcontainer provides Node.js 22, stable Rust/Cargo, Java 17,
+Tauri's Ubuntu 24.04 build libraries, Xvfb, Openbox, and noVNC. On creation,
+`poc/scripts/codespace-setup.sh` installs the locked npm dependencies and stages
+only the pinned Nextflow language-server JAR after verifying its manifest
+SHA-256. The JAR remains outside version control.
+
+Create a Codespace from the intended PR branch and commit. Before testing, check
+that the checkout is the revision you expect:
+
+```sh
+git rev-parse HEAD
+git status --short
+```
+
+Compare the first command's output with the intended commit SHA. If it differs,
+stop and create or update the Codespace for the correct PR revision before
+proceeding. The devcontainer setup runs automatically on creation; rerun it from
+the repository root if needed:
+
+```sh
+bash poc/scripts/codespace-setup.sh
+cd poc
+npm test
+npm run build
+(cd src-tauri && cargo test --locked)
+npm run tauri -- build --no-bundle
+```
+
+For interactive testing, run:
+
+```sh
+cd poc
+npm run codespace:desktop
+```
+
+Open the automatically forwarded **Private Tauri desktop (noVNC)** port 6080
+from the Codespaces **Ports** tab and connect to the desktop. Forwarding is
+private to authorized Codespaces users; the raw VNC server binds only to
+localhost and its port must not be forwarded. Do not expose port 1420 as a
+substitute: the browser Vite page does not exercise Tauri IPC. In the desktop
+window, test Connect/Stop and the available diagnostics, hover, and completion
+features. The prototype still uses a single in-memory sample buffer and does
+not demonstrate workspace or cross-file behavior.
+
+Codespaces setup and UI testing have not yet been validated in a fresh Codespace.
+This optional interactive path does not replace headless CI, and does not by
+itself establish Linux product support.
+
 ### macOS — Tauri prerequisites documented; not validated here
 
 This project has not yet been built on macOS. Tauri supports macOS; install the

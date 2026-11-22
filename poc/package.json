@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "test": "node --experimental-strip-types --test",
     "tauri": "tauri",
+    "codespace:setup": "bash scripts/codespace-setup.sh",
+    "codespace:desktop": "bash scripts/codespace-desktop.sh",
     "audit:artifacts": "node scripts/verify-artifacts.mjs",
     "audit:npm": "npm audit --audit-level=moderate",
     "audit:cargo": "cd src-tauri && cargo audit --deny warnings",
