@@ -36,6 +36,8 @@ partial progress, blockers, validation limitations, and reopened work.
   libraries are missing on this host; the Rust command path is therefore not
   fully compiled or runtime-tested here.
 - `git diff --check` passed. Native UI verification remains pending.
+- CodeQL found no JavaScript alerts but timed out before completing every
+  language; the tool advised not to rerun because it would not complete.
 
 ### Limitations and next steps
 
