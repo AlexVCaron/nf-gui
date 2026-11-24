@@ -32,17 +32,32 @@ pub struct WorkspaceSnapshot {
 }
 
 #[tauri::command]
-pub fn workspace_open(app: tauri::AppHandle) -> Result<Option<WorkspaceSnapshot>, String> {
+pub async fn workspace_open(
+    app: tauri::AppHandle,
+) -> Result<Option<WorkspaceSnapshot>, String> {
     #[cfg(unix)]
     {
-        let Some(selection) = app.dialog().file().blocking_pick_folder() else {
+        let (sender, receiver) = std::sync::mpsc::channel();
+        app.dialog()
+            .file()
+            .pick_folder(move |selection| {
+                let _ = sender.send(selection);
+            });
+        let selection = tauri::async_runtime::spawn_blocking(move || receiver.recv())
+            .await
+            .map_err(|error| format!("Folder picker task failed: {error}"))?
+            .map_err(|error| format!("Folder picker did not return a selection: {error}"))?;
+        let Some(selection) = selection else {
             return Ok(None);
         };
         let selected_path = selection
             .into_path()
             .map_err(|error| format!("Could not resolve selected workspace folder: {error}"))?;
 
-        read_workspace(&selected_path).map(Some)
+        tauri::async_runtime::spawn_blocking(move || read_workspace(&selected_path))
+            .await
+            .map_err(|error| format!("Workspace reader task failed: {error}"))?
+            .map(Some)
     }
     #[cfg(not(unix))]
     {

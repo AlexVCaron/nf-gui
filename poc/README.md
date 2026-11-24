@@ -16,7 +16,8 @@ license does not replace those obligations.
   and nf-schema plugin blob.
 
 The editor and graph are independent examples: changing the editor does not
-change the graph. **Open project** uses a native folder picker to load up to 256
+change the graph. **Open project** uses a nonblocking native folder picker and
+background workspace scan to load up to 256
 UTF-8 `.nf` files from the selected directory (up to 1 MiB per file, 16 MiB
 total). Hidden and common generated directories are skipped. On Unix, reads
 are rooted at a directory handle and reject symlinks in every path component.
@@ -26,8 +27,9 @@ Files appear in the explorer and can be switched between in the editor. The
 language server receives the selected workspace root and each document is
 synchronized when opened. Edits remain in memory and are not saved to disk.
 Connect/stop controls manage the supervised LSP transport; diagnostics,
-completion, and hover are available when advertised by the server. The graph
-remains static and is not derived from source.
+completion, and server hover are available when advertised. Hovering a
+diagnostic range also shows the diagnostic message. The graph remains static and
+is not derived from source.
 
 The LSP commands only launch fixed `java -jar` with the packaged
 `artifacts/language-server-all.jar` after checking its pinned SHA-256. The native

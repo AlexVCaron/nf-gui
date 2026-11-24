@@ -6,6 +6,39 @@ This file records planning and implementation advancement, not just releases.
 Update it alongside the tracker whenever working on plan tasks, including
 partial progress, blockers, validation limitations, and reopened work.
 
+## 2026-11-24 — Fix workspace picker responsiveness and diagnostic hover
+
+### Tasks/status
+
+- **P1-03 remains in progress:** the picker now uses the nonblocking dialog
+  callback, and workspace scanning is moved to a blocking worker; real native
+  validation remains pending after the user's report of a frozen window.
+- **P1-04 remains in progress:** diagnostic hover text is included explicitly;
+  verify the fix in Codespaces against the pinned server.
+
+### Work and decisions
+
+- Replaced the blocking folder-picker API with the callback API and moved
+  bounded workspace discovery off the window event loop.
+- Added hover content for diagnostics covering the pointer, in addition to
+  language-server hover text, so diagnostics remain explainable when the server
+  returns no hover result.
+- Added tests for diagnostic-range hover matching and updated the Phase 1 notes,
+  tracker, and PoC usage documentation.
+
+### Validation
+
+- Pending frontend tests/build, Rust formatting/metadata/tests, and dependency
+  audit after implementation.
+- Rust native tests may be unavailable on this host if GTK/GLib development
+  libraries remain absent; record the actual result after running them.
+
+### Limitations and next steps
+
+- Rebuild and test in Codespaces: hover an error/warning, open a project, cancel
+  the picker, and select a project. Confirm the UI remains responsive throughout.
+- Keep P1-03/P1-04 in progress until those native checks pass.
+
 ## 2026-11-22 — Add a bounded multi-file workspace spike
 
 ### Tasks/status

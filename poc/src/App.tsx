@@ -110,6 +110,7 @@ function App() {
   const serverOperationInFlight = useRef(false);
   const [workspaceName, setWorkspaceName] = useState("");
   const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
+  const [workspaceOpening, setWorkspaceOpening] = useState(false);
   const [activeUri, setActiveUri] = useState("");
   const [hasEdits, setHasEdits] = useState(false);
   const [languageServerStatus, setLanguageServerStatus] = useState<
@@ -166,6 +167,7 @@ function App() {
   async function openWorkspace() {
     if (serverOperationInFlight.current) return;
     serverOperationInFlight.current = true;
+    setWorkspaceOpening(true);
     setLanguageServerError("");
 
     try {
@@ -220,6 +222,7 @@ function App() {
       setLanguageServerError(error instanceof Error ? error.message : "Could not open workspace");
     } finally {
       serverOperationInFlight.current = false;
+      setWorkspaceOpening(false);
     }
   }
 
@@ -316,9 +319,9 @@ function App() {
             className="open-workspace-button"
             type="button"
             onClick={() => void openWorkspace()}
-            disabled={languageServerStatus === "connecting" || languageServerStatus === "stopping"}
+            disabled={workspaceOpening || languageServerStatus === "connecting" || languageServerStatus === "stopping"}
           >
-            Open project
+            {workspaceOpening ? "Opening project…" : "Open project"}
           </button>
          <button
            className="language-server-button"

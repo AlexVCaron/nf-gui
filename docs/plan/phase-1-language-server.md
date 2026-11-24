@@ -120,6 +120,13 @@ handle-safe traversal is available. Selecting another document opens it in the
 current LSP session. This is not yet a full workspace lifecycle: edits are not
 saved, external changes are not watched, and rename/delete flows are not
 implemented.
+The folder picker uses its callback API, and workspace discovery runs on a
+blocking worker rather than holding the window event loop. The editor hover
+provider includes any LSP diagnostic covering the hovered position alongside
+server-provided hover content, including when the server does not return hover
+content. This behavior is implemented but still needs native Codespaces
+verification following the user's report that diagnostic hovers were absent and
+opening a project froze the window.
 Protocol framing, document lifecycle/sync, completion
 normalization, request correlation, cancellation, timeout, write ordering, and
 closure have focused tests. Outbound JSON-RPC frames are serialized so edits

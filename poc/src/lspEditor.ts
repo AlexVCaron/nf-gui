@@ -4,6 +4,7 @@ import { LspRpcClient } from "./lspProtocol";
 import { normalizeCompletionResult, type LspCompletionItem } from "./lspCompletion";
 import { isCurrentDiagnosticsNotification } from "./lspDiagnostics";
 import { LspDocumentSync, type SyncableTextModel } from "./lspDocumentSync";
+import { diagnosticsAtPosition } from "./lspHover";
 
 type ServerCapabilities = {
   completionProvider?: { triggerCharacters?: string[] } | boolean;
@@ -160,36 +161,51 @@ export async function connectLspEditor(
     await documents.open(model);
     if (stopped) throw new Error("Language server exited during startup");
 
-    hoverProvider = capabilities.hoverProvider
-      ? monaco.languages.registerHoverProvider("nextflow", {
+    hoverProvider = monaco.languages.registerHoverProvider("nextflow", {
           provideHover: async (hoverModel, position, token) => {
             const hoverUri = hoverModel.uri.toString();
             if (documents?.getModel(hoverUri) !== hoverModel) return null;
             const requestedVersion = hoverModel.getVersionId();
+            const diagnosticContents = diagnosticsAtPosition(
+              monaco.editor.getModelMarkers({ resource: hoverModel.uri }),
+              position,
+            ).map((diagnostic) => ({
+              value: `**${markerSeverityName(diagnostic.severity)}**${diagnostic.source ? ` · ${diagnostic.source}` : ""}\n\n${diagnostic.message}`,
+              isTrusted: false,
+              supportHtml: false,
+            }));
             const controller = new AbortController();
             const cancellation = token.onCancellationRequested(() => controller.abort());
+            let serverHover: LspHover | null | undefined;
             try {
-              const result = await client?.request(
-                "textDocument/hover",
-                {
-                  textDocument: { uri: hoverUri },
-                  position: { line: position.lineNumber - 1, character: position.column - 1 },
-                },
-                { signal: controller.signal },
-              ) as LspHover | null | undefined;
-              if (!result?.contents || hoverModel.getVersionId() !== requestedVersion) return null;
-              return {
-                contents: normalizeHoverContents(result.contents),
-                range: result.range ? toMonacoRange(result.range) : undefined,
-              };
+              if (capabilities.hoverProvider) {
+                serverHover = await client?.request(
+                  "textDocument/hover",
+                  {
+                    textDocument: { uri: hoverUri },
+                    position: { line: position.lineNumber - 1, character: position.column - 1 },
+                  },
+                  { signal: controller.signal },
+                ) as LspHover | null | undefined;
+              }
             } catch {
-              return null;
+              if (controller.signal.aborted) return null;
             } finally {
               cancellation.dispose();
             }
+            if (hoverModel.getVersionId() !== requestedVersion) return null;
+            const serverContents = serverHover?.contents
+              ? normalizeHoverContents(serverHover.contents)
+              : [];
+            const contents = [...diagnosticContents, ...serverContents];
+            return contents.length
+              ? {
+                  contents,
+                  range: serverHover?.range ? toMonacoRange(serverHover.range) : undefined,
+                }
+              : null;
           },
-        })
-      : undefined;
+        });
 
     const completionCapability = capabilities.completionProvider;
     completionProvider = completionCapability
@@ -309,6 +325,16 @@ function markerSeverity(severity?: number): monaco.MarkerSeverity {
     case 3: return monaco.MarkerSeverity.Info;
     case 4: return monaco.MarkerSeverity.Hint;
     default: return monaco.MarkerSeverity.Info;
+  }
+}
+
+function markerSeverityName(severity: monaco.MarkerSeverity): string {
+  switch (severity) {
+    case monaco.MarkerSeverity.Error: return "Error";
+    case monaco.MarkerSeverity.Warning: return "Warning";
+    case monaco.MarkerSeverity.Info: return "Information";
+    case monaco.MarkerSeverity.Hint: return "Hint";
+    default: return "Diagnostic";
   }
 }
 
