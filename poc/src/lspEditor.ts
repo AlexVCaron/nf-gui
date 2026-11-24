@@ -162,50 +162,50 @@ export async function connectLspEditor(
     if (stopped) throw new Error("Language server exited during startup");
 
     hoverProvider = monaco.languages.registerHoverProvider("nextflow", {
-          provideHover: async (hoverModel, position, token) => {
-            const hoverUri = hoverModel.uri.toString();
-            if (documents?.getModel(hoverUri) !== hoverModel) return null;
-            const requestedVersion = hoverModel.getVersionId();
-            const diagnosticContents = diagnosticsAtPosition(
-              monaco.editor.getModelMarkers({ resource: hoverModel.uri }),
-              position,
-            ).map((diagnostic) => ({
-              value: `**${markerSeverityName(diagnostic.severity)}**${diagnostic.source ? ` · ${diagnostic.source}` : ""}\n\n${diagnostic.message}`,
-              isTrusted: false,
-              supportHtml: false,
-            }));
-            const controller = new AbortController();
-            const cancellation = token.onCancellationRequested(() => controller.abort());
-            let serverHover: LspHover | null | undefined;
-            try {
-              if (capabilities.hoverProvider) {
-                serverHover = await client?.request(
-                  "textDocument/hover",
-                  {
-                    textDocument: { uri: hoverUri },
-                    position: { line: position.lineNumber - 1, character: position.column - 1 },
-                  },
-                  { signal: controller.signal },
-                ) as LspHover | null | undefined;
-              }
-            } catch {
-              if (controller.signal.aborted) return null;
-            } finally {
-              cancellation.dispose();
+      provideHover: async (hoverModel, position, token) => {
+        const hoverUri = hoverModel.uri.toString();
+        if (documents?.getModel(hoverUri) !== hoverModel) return null;
+        const requestedVersion = hoverModel.getVersionId();
+        const diagnosticContents = diagnosticsAtPosition(
+          monaco.editor.getModelMarkers({ resource: hoverModel.uri }),
+          position,
+        ).map((diagnostic) => ({
+          value: `**${markerSeverityName(diagnostic.severity)}**${diagnostic.source ? ` · ${diagnostic.source}` : ""}\n\n${diagnostic.message}`,
+          isTrusted: false,
+          supportHtml: false,
+        }));
+        const controller = new AbortController();
+        const cancellation = token.onCancellationRequested(() => controller.abort());
+        let serverHover: LspHover | null | undefined;
+        try {
+          if (capabilities.hoverProvider) {
+            serverHover = await client?.request(
+              "textDocument/hover",
+              {
+                textDocument: { uri: hoverUri },
+                position: { line: position.lineNumber - 1, character: position.column - 1 },
+              },
+              { signal: controller.signal },
+            ) as LspHover | null | undefined;
+          }
+        } catch {
+          if (controller.signal.aborted) return null;
+        } finally {
+          cancellation.dispose();
+        }
+        if (hoverModel.getVersionId() !== requestedVersion) return null;
+        const serverContents = serverHover?.contents
+          ? normalizeHoverContents(serverHover.contents)
+          : [];
+        const contents = [...diagnosticContents, ...serverContents];
+        return contents.length
+          ? {
+              contents,
+              range: serverHover?.range ? toMonacoRange(serverHover.range) : undefined,
             }
-            if (hoverModel.getVersionId() !== requestedVersion) return null;
-            const serverContents = serverHover?.contents
-              ? normalizeHoverContents(serverHover.contents)
-              : [];
-            const contents = [...diagnosticContents, ...serverContents];
-            return contents.length
-              ? {
-                  contents,
-                  range: serverHover?.range ? toMonacoRange(serverHover.range) : undefined,
-                }
-              : null;
-          },
-        });
+          : null;
+      },
+    });
 
     const completionCapability = capabilities.completionProvider;
     completionProvider = completionCapability

@@ -28,10 +28,14 @@ partial progress, blockers, validation limitations, and reopened work.
 
 ### Validation
 
-- Pending frontend tests/build, Rust formatting/metadata/tests, and dependency
-  audit after implementation.
-- Rust native tests may be unavailable on this host if GTK/GLib development
-  libraries remain absent; record the actual result after running them.
+- `npm ci` passed; `npm test` passed all 29 tests, including the new diagnostic
+  hover-range tests; `npm run build` passed with the existing Monaco chunk-size
+  warning; `npm audit --audit-level=moderate` reported no vulnerabilities.
+- `cargo fmt --all -- --check` and `cargo metadata --locked --no-deps` passed.
+  `cargo test --locked` could not compile because GLib/GObject development
+  libraries are missing on this host; the Rust command path is therefore not
+  fully compiled or runtime-tested here.
+- `git diff --check` passed. Native UI verification remains pending.
 
 ### Limitations and next steps
 
