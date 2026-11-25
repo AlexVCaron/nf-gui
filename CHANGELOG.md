@@ -6,6 +6,43 @@ This file records planning and implementation advancement, not just releases.
 Update it alongside the tracker whenever working on plan tasks, including
 partial progress, blockers, validation limitations, and reopened work.
 
+## 2026-11-25 — Make diagnostic hover independent of LSP latency
+
+### Tasks/status
+
+- **P1-04 remains in progress:** a diagnostic hover now bypasses the LSP hover
+  request; native verification is still required.
+
+### Work and decisions
+
+- Diagnostic marker messages are returned immediately when the pointer is
+  inside their range. The server hover request is used only when there is no
+  diagnostic at the pointer, and it is canceled after two seconds or when
+  Monaco cancels the hover.
+- Explicitly enabled Monaco hover in the editor options.
+- Added regression tests for immediate diagnostic response, missing server
+  content, slow request timeout, cancellation, and markers outside the position.
+- The user's supplied image shows the noVNC root directory listing, not the
+  Tauri editor, so it cannot establish whether the current app build was tested.
+
+### Validation
+
+- `npm ci` passed with zero reported vulnerabilities; `npm test` passed all 33
+  tests, including the new hover-path tests; `npm run build` passed with the
+  existing Monaco chunk-size warning; and `npm audit --audit-level=moderate`
+  reported zero vulnerabilities.
+- `cargo fmt --all -- --check`, `cargo metadata --locked --no-deps`, and
+  `git diff --check` passed. `cargo test --locked` remains blocked because
+  GLib/GObject development libraries are missing on this host.
+- Secret scanning and CodeQL are pending. Native Codespaces hover behavior
+  remains unverified.
+
+### Limitations and next steps
+
+- In Codespaces, open `vnc.html` from the directory listing, connect the LSP in
+  the Tauri app, and hover directly over an underlined diagnostic in the text
+  editor. Keep P1-04 in progress until a tooltip is observed.
+
 ## 2026-11-24 — Fix workspace picker responsiveness and diagnostic hover
 
 ### Tasks/status

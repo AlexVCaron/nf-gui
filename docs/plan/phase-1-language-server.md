@@ -121,12 +121,14 @@ current LSP session. This is not yet a full workspace lifecycle: edits are not
 saved, external changes are not watched, and rename/delete flows are not
 implemented.
 The folder picker uses its callback API, and workspace discovery runs on a
-blocking worker rather than holding the window event loop. The editor hover
-provider includes any LSP diagnostic covering the hovered position alongside
-server-provided hover content, including when the server does not return hover
-content. This behavior is implemented but still needs native Codespaces
-verification following the user's report that diagnostic hovers were absent and
-opening a project froze the window.
+blocking worker rather than holding the window event loop. The editor returns diagnostic hover content immediately when the pointer is
+within a diagnostic range, without waiting for an LSP hover response. Server
+hover remains enabled outside diagnostic ranges and is canceled after a
+two-second bound. Monaco hover is explicitly enabled. Unit tests cover the
+diagnostic fast path, missing/slow server hover, cancellation, and range
+matching. The user still reports no tooltip; the provided image shows noVNC's
+root directory listing rather than the Tauri editor, so native hover behavior
+remains unverified.
 Protocol framing, document lifecycle/sync, completion
 normalization, request correlation, cancellation, timeout, write ordering, and
 closure have focused tests. Outbound JSON-RPC frames are serialized so edits

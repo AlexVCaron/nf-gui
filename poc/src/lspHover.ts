@@ -24,3 +24,40 @@ export function diagnosticsAtPosition<T extends HoverDiagnostic>(
     return true;
   });
 }
+
+export async function resolveHoverContents<T>(
+  diagnosticContents: readonly T[],
+  requestServerHover: (signal: AbortSignal) => Promise<readonly T[]>,
+  cancellationSignal: AbortSignal,
+  timeoutMs: number,
+): Promise<T[]> {
+  if (diagnosticContents.length > 0) return [...diagnosticContents];
+  if (cancellationSignal.aborted) return [];
+
+  const requestController = new AbortController();
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  let onCancel: (() => void) | undefined;
+  const cancelledOrTimedOut = new Promise<T[]>((resolve) => {
+    onCancel = () => {
+      requestController.abort();
+      resolve([]);
+    };
+    cancellationSignal.addEventListener("abort", onCancel, { once: true });
+    timeout = setTimeout(() => {
+      requestController.abort();
+      resolve([]);
+    }, timeoutMs);
+  });
+
+  try {
+    return [...await Promise.race([
+      requestServerHover(requestController.signal),
+      cancelledOrTimedOut,
+    ])];
+  } catch {
+    return [];
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout);
+    if (onCancel) cancellationSignal.removeEventListener("abort", onCancel);
+  }
+}

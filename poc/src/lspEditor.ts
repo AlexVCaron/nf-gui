@@ -4,7 +4,7 @@ import { LspRpcClient } from "./lspProtocol";
 import { normalizeCompletionResult, type LspCompletionItem } from "./lspCompletion";
 import { isCurrentDiagnosticsNotification } from "./lspDiagnostics";
 import { LspDocumentSync, type SyncableTextModel } from "./lspDocumentSync";
-import { diagnosticsAtPosition } from "./lspHover";
+import { diagnosticsAtPosition, resolveHoverContents } from "./lspHover";
 
 type ServerCapabilities = {
   completionProvider?: { triggerCharacters?: string[] } | boolean;
@@ -174,34 +174,37 @@ export async function connectLspEditor(
           isTrusted: false,
           supportHtml: false,
         }));
-        const controller = new AbortController();
-        const cancellation = token.onCancellationRequested(() => controller.abort());
-        let serverHover: LspHover | null | undefined;
+        const cancellationController = new AbortController();
+        const cancellation = token.onCancellationRequested(() => cancellationController.abort());
+        let serverHoverRange: monaco.Range | undefined;
+        let contents: monaco.IMarkdownString[];
         try {
-          if (capabilities.hoverProvider) {
-            serverHover = await client?.request(
-              "textDocument/hover",
-              {
-                textDocument: { uri: hoverUri },
-                position: { line: position.lineNumber - 1, character: position.column - 1 },
-              },
-              { signal: controller.signal },
-            ) as LspHover | null | undefined;
-          }
-        } catch {
-          if (controller.signal.aborted) return null;
+          contents = await resolveHoverContents<monaco.IMarkdownString>(
+            diagnosticContents,
+            async (signal) => {
+              if (!capabilities.hoverProvider) return [];
+              const serverHover = await client?.request(
+                "textDocument/hover",
+                {
+                  textDocument: { uri: hoverUri },
+                  position: { line: position.lineNumber - 1, character: position.column - 1 },
+                },
+                { signal, timeoutMs: 2_000 },
+              ) as LspHover | null | undefined;
+              if (serverHover?.range) serverHoverRange = toMonacoRange(serverHover.range);
+              return serverHover?.contents ? normalizeHoverContents(serverHover.contents) : [];
+            },
+            cancellationController.signal,
+            2_000,
+          );
         } finally {
           cancellation.dispose();
         }
         if (hoverModel.getVersionId() !== requestedVersion) return null;
-        const serverContents = serverHover?.contents
-          ? normalizeHoverContents(serverHover.contents)
-          : [];
-        const contents = [...diagnosticContents, ...serverContents];
         return contents.length
           ? {
               contents,
-              range: serverHover?.range ? toMonacoRange(serverHover.range) : undefined,
+              range: serverHoverRange,
             }
           : null;
       },

@@ -135,6 +135,7 @@ function App() {
       theme: "vs-dark",
       automaticLayout: true,
       minimap: { enabled: false },
+      hover: { enabled: "on", delay: 250, sticky: true },
       fontSize: 14,
       scrollBeyondLastLine: false,
       wordWrap: "on",
