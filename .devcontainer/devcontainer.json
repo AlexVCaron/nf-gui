@@ -1,0 +1,30 @@
+{
+  "name": "nf-gui Linux desktop",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "stable"
+    }
+  },
+  "forwardPorts": [6080],
+  "portsAttributes": {
+    "6080": {
+      "label": "Private Tauri desktop (noVNC)",
+      "onAutoForward": "notify",
+      "visibility": "private"
+    }
+  },
+  "postCreateCommand": "bash poc/scripts/codespace-setup.sh",
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "RUST_BACKTRACE": "1",
+    "RUSTC_WRAPPER": "sccache",
+    "SCCACHE_DIR": "${containerWorkspaceFolder}/poc/.sccache",
+    "SCCACHE_CACHE_SIZE": "5G"
+  }
+}

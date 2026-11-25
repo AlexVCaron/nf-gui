@@ -25,6 +25,11 @@ and [CHANGELOG.md](CHANGELOG.md) whenever they work on plan tasks.** Include tho
 updates in the same change as the work, including partial progress, blockers,
 and reopened tasks—not only at phase completion.
 
+Agents must also follow the repository [handoff requirements](AGENTS.md): every
+final chat response includes a concise work summary, validation outcome, and
+blockers/next actions where applicable. Put the summary in chat, not a separate
+summary file, unless the user explicitly requests one.
+
 1. Before starting, read the relevant phase and select its stable task IDs in
    the tracker. Record in-progress status and the intended next action.
 2. Before handing off work, update checkboxes and the tracker's work-status table
