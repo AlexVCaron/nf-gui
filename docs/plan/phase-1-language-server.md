@@ -121,14 +121,27 @@ current LSP session. This is not yet a full workspace lifecycle: edits are not
 saved, external changes are not watched, and rename/delete flows are not
 implemented.
 The folder picker uses its callback API, and workspace discovery runs on a
-blocking worker rather than holding the window event loop. The editor returns diagnostic hover content immediately when the pointer is
+blocking worker rather than holding the window event loop. The editor currently
+attempts to return diagnostic hover content immediately when the pointer is
 within a diagnostic range, without waiting for an LSP hover response. Server
 hover remains enabled outside diagnostic ranges and is canceled after a
 two-second bound. Monaco hover is explicitly enabled. Unit tests cover the
 diagnostic fast path, missing/slow server hover, cancellation, and range
-matching. The user still reports no tooltip; the provided image shows noVNC's
-root directory listing rather than the Tauri editor, so native hover behavior
-remains unverified.
+matching. The user reports that tooltips still do not appear in the document
+view, so hover is explicitly deferred to the
+[P1-04-HOVER backlog item](#deferred-issue-backlog); do not treat the
+implementation or unit tests as user-facing validation.
+
+### Deferred issue backlog
+
+- **P1-04-HOVER — Deferred:** Diagnose and restore text-editor hover tooltips.
+  The user repeatedly confirmed that no tooltip appears over diagnostic text in
+  the Codespaces Tauri editor, despite diagnostics being visible and focused
+  unit tests passing. The original noVNC image showed the server-root listing;
+  subsequent user testing is in the app, so do not attribute the failure to
+  noVNC without evidence. If reprioritized, reproduce in the native Codespaces
+  app and trace Monaco provider invocation, active model registration, marker
+  ranges, and returned hover content. Keep deferred until separately prioritized.
 Protocol framing, document lifecycle/sync, completion
 normalization, request correlation, cancellation, timeout, write ordering, and
 closure have focused tests. Outbound JSON-RPC frames are serialized so edits
@@ -188,9 +201,9 @@ only the Vite browser page is not sufficient to validate Tauri IPC.
 Codespaces is the prioritized human-review path, not a replacement for
 headless GitHub Actions tests or a claim of platform support. Validate a fresh
 Codespace through dependency installation, frontend and Rust tests, native
-Tauri build/launch, and real-server Connect/Stop, diagnostics, hover, and
-completion checks. Keep uncompleted checks and any environment-specific
-limitations explicit.
+Tauri build/launch, and real-server Connect/Stop, diagnostics, and completion.
+Hover remains in the deferred backlog above. Keep uncompleted checks and
+environment-specific limitations explicit.
 
 ### P1-07 — Reproducible Linux Codespaces environment
 

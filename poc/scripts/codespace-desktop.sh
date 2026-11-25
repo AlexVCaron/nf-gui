@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 POC_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 DISPLAY="${DISPLAY:-:99}"
 export DISPLAY
+export LIBGL_ALWAYS_SOFTWARE=1
 
 for command_name in Xvfb openbox x11vnc websockify dbus-run-session xdpyinfo; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
@@ -51,6 +52,10 @@ for attempt in {1..50}; do
   fi
   sleep 0.1
 done
+
+if ! xdpyinfo -display "$DISPLAY" -queryExtensions | awk '$1 == "DRI3" { found = 1 } END { exit !found }'; then
+  printf 'Note: Xvfb does not advertise DRI3; rendering will use Mesa software rendering (no GPU passthrough).\n'
+fi
 
 openbox --display "$DISPLAY" &
 openbox_pid=$!

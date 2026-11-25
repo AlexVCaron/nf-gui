@@ -6,6 +6,57 @@ This file records planning and implementation advancement, not just releases.
 Update it alongside the tracker whenever working on plan tasks, including
 partial progress, blockers, validation limitations, and reopened work.
 
+## 2026-11-25 — Defer editor hover and improve Codespaces runtime
+
+### Tasks/status
+
+- **P1-04 remains in progress; P1-04-HOVER deferred:** the user reports no
+  tooltip in the document view, even though LSP diagnostics are visible.
+- **P1-07 refinements pending Codespaces verification:** added a persistent
+  workspace-local Rust compiler cache and made the Xvfb software-rendering
+  limitation explicit.
+
+### Work and decisions
+
+- Documented text-editor hover as deferred in the Phase 1 backlog, tracker, and
+  PoC README. Existing implementation/tests are retained, but do not claim that
+  they make interactive hover work.
+- The user confirmed that the Open Project dialog opens and accepts a folder;
+  the chosen folder contained no `.nf` files, so it was correctly rejected.
+  The current UI's generic error is noted for later UX improvement.
+- Inspected Codespaces build layout: Cargo's default `poc/src-tauri/target`
+  already resides in the persistent workspace and supports normal warm-build
+  reuse. Added `sccache` as a wrapper with a 5 GiB cache under `poc/.sccache`
+  to also reuse compiler outputs when Cargo recompiles; cache-hit/performance
+  measurements require running builds in a fresh Codespace.
+- Xvfb does not expose a hardware GPU/DRM device, so adding a dummy X driver
+  cannot provide DRI3 hardware acceleration. The desktop script now detects
+  whether Xvfb advertises DRI3, selects Mesa software rendering explicitly, and
+  reports the fallback rather than claiming acceleration.
+
+### Validation
+
+- Devcontainer JSON parsing, desktop-script `bash -n`, and `git diff --check`
+  passed. Ubuntu 24.04 package metadata provides `sccache` 0.7.7; the Codespace
+  image itself has not yet been rebuilt to install/configure it.
+- `npm ci` passed with zero reported vulnerabilities, all 33 frontend tests
+  passed, `npm run build` passed with the existing chunk-size warning, and
+  `npm audit --audit-level=moderate` reported zero vulnerabilities.
+- `cargo fmt --all -- --check` and `cargo metadata --locked --no-deps` passed.
+  `cargo test --locked` remains blocked because GLib/GObject development
+  libraries are missing on this host.
+- Codespaces cold/warm build timings, sccache hit statistics, and Xvfb DRI3
+  output cannot be confirmed on the current host. The noVNC script's display
+  changes are syntax-checked but need runtime verification in Codespaces.
+
+### Limitations and next steps
+
+- Rebuild the Codespace, compare a first and second Tauri build using
+  `sccache --show-stats`, and check the desktop launch output for DRI3/software
+  rendering. Open `/vnc.html` from the directory listing to enter the viewer.
+- Keep P1-04-HOVER deferred unless the user reprioritizes it; use a folder
+  containing at least one `.nf` file to exercise workspace loading.
+
 ## 2026-11-25 — Make diagnostic hover independent of LSP latency
 
 ### Tasks/status

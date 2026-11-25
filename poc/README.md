@@ -19,17 +19,19 @@ The editor and graph are independent examples: changing the editor does not
 change the graph. **Open project** uses a nonblocking native folder picker and
 background workspace scan to load up to 256
 UTF-8 `.nf` files from the selected directory (up to 1 MiB per file, 16 MiB
-total). Hidden and common generated directories are skipped. On Unix, reads
-are rooted at a directory handle and reject symlinks in every path component.
+total). A folder with no `.nf` files is rejected; the current UI may show only
+a generic workspace-open error. Hidden and common generated directories are
+skipped. On Unix, reads are rooted at a directory handle and reject symlinks in every path component.
 Workspace opening is currently disabled on non-Unix platforms until an
 equivalent handle-safe reader is implemented.
 Files appear in the explorer and can be switched between in the editor. The
 language server receives the selected workspace root and each document is
 synchronized when opened. Edits remain in memory and are not saved to disk.
-Connect/stop controls manage the supervised LSP transport; diagnostics,
-completion, and server hover are available when advertised. Hovering a
-diagnostic range also shows the diagnostic message. The graph remains static and
-is not derived from source.
+Connect/stop controls manage the supervised LSP transport; diagnostics and
+completion are supported. Text-editor hover is currently deferred because
+diagnostic tooltips remain unavailable in the user's Codespaces test; see the
+[deferred issue backlog](../docs/plan/phase-1-language-server.md#deferred-issue-backlog).
+The graph remains static and is not derived from source.
 
 The LSP commands only launch fixed `java -jar` with the packaged
 `artifacts/language-server-all.jar` after checking its pinned SHA-256. The native
@@ -134,7 +136,7 @@ the buttons and language-server UI flow were not interactively exercised.
 ### GitHub Codespaces — Linux desktop review
 
 The repository devcontainer provides Node.js 22, stable Rust/Cargo, Java 17,
-Tauri's Ubuntu 24.04 build libraries, Xvfb, Openbox, and noVNC. On creation,
+Tauri's Ubuntu 24.04 build libraries, `sccache`, Xvfb, Openbox, and noVNC. On creation,
 `poc/scripts/codespace-setup.sh` installs the locked npm dependencies and stages
 only the pinned Nextflow language-server JAR after verifying its manifest
 SHA-256. The JAR remains outside version control.
@@ -159,7 +161,15 @@ npm test
 npm run build
 (cd src-tauri && cargo test --locked)
 npm run tauri -- build --no-bundle
+sccache --show-stats
 ```
+
+Rust build caching uses Cargo's normal incremental `target` artifacts together
+with `sccache` for reusable compiler outputs. The sccache directory is stored
+under `poc/.sccache` in the workspace so it can be reused while that workspace
+is retained; its configured maximum size is 5 GiB. Check the statistics after
+the second build to see whether this workload produced cache hits. The first
+build still needs to compile uncached dependencies.
 
 For interactive testing, run:
 
@@ -174,15 +184,24 @@ shows a directory listing. Connect to the desktop viewer. Forwarding is private
 to authorized Codespaces users; the raw VNC server binds only to localhost and
 its port must not be forwarded. Do not expose port 1420 as a substitute: the
 browser Vite page does not exercise Tauri IPC. In the desktop window, test
-Connect/Stop and the available diagnostics, hover, and completion features. The
-prototype still uses a single in-memory sample buffer and does not demonstrate
-workspace or cross-file behavior.
+Connect/Stop and the available diagnostics/completion features. Hover remains
+deferred because it did not appear in the user's test. The app can load bounded
+`.nf` files into in-memory models on Unix; choose a folder containing at least
+one `.nf` file. Edits are not saved to disk.
 
-The user confirmed that the Codespaces setup, build/test steps, noVNC desktop,
-and Tauri/LSP interactive checks work. This is user-reported validation; exact
-command output and commit SHA are not recorded here. This optional interactive
-path does not replace headless CI or by itself establish broader Linux product
-support. The prototype remains limited to its single sample buffer.
+The desktop script checks whether Xvfb advertises DRI3 and explicitly selects
+Mesa software rendering. GitHub Codespaces does not expose a GPU/DRM device to
+this Xvfb display, so installing a dummy X driver cannot provide hardware
+acceleration; a missing DRI3 extension is expected. Software rendering is the
+supported fallback for this virtual desktop.
+
+The user confirmed that the Codespaces setup and noVNC desktop work, and that
+the LSP publishes diagnostics. The user also reports that editor hover tooltips
+do not appear; this remains a deferred issue. The folder picker opens, but a
+selected folder without `.nf` files produces no workspace. This is
+user-reported validation; exact command output and commit SHA are not recorded
+here. This optional interactive path does not replace headless CI or by itself
+establish broader Linux product support.
 
 ### macOS — Tauri prerequisites documented; not validated here
 

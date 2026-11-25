@@ -20,6 +20,7 @@ RUN apt-get update \
         openjdk-17-jre-headless \
         pkg-config \
         patchelf \
+        sccache \
         websockify \
         wget \
         x11-utils \
