@@ -48,6 +48,8 @@ partial progress, blockers, validation limitations, and reopened work.
 - Codespaces cold/warm build timings, sccache hit statistics, and Xvfb DRI3
   output cannot be confirmed on the current host. The noVNC script's display
   changes are syntax-checked but need runtime verification in Codespaces.
+- CodeQL found no JavaScript alerts but timed out before completing analysis of
+  every language; the tool advised not to rerun it.
 
 ### Limitations and next steps
 
