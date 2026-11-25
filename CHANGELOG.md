@@ -34,8 +34,9 @@ partial progress, blockers, validation limitations, and reopened work.
 - `cargo fmt --all -- --check`, `cargo metadata --locked --no-deps`, and
   `git diff --check` passed. `cargo test --locked` remains blocked because
   GLib/GObject development libraries are missing on this host.
-- Secret scanning and CodeQL are pending. Native Codespaces hover behavior
-  remains unverified.
+- Secret scanning found no secrets in changed files. CodeQL reported no
+  JavaScript alerts but timed out before all languages completed; the tool
+  advised not to rerun it. Native Codespaces hover behavior remains unverified.
 
 ### Limitations and next steps
 
